@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>时光印记 · 照片批量时间戳工具</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">时光印记</div>
+      <nav class="top-actions">
+        <span id="planBadge" class="plan-badge">Free（最多 50 张）</span>
+        <button id="upgradeBtn" class="ghost">升级 Pro</button>
+      </nav>
+    </header>
+
+    <main class="layout">
+      <section class="left-col">
+        <article class="card upload-card">
+          <h2>① 上传照片</h2>
+          <label class="upload-dropzone" for="fileInput">
+            <input id="fileInput" type="file" accept="image/*" multiple />
+            <p id="uploadLimitText">拖拽或点击上传（最多 50 张）</p>
+            <small id="uploadMeta">已上传 0 张 · 已解析 0 张 · 异常 0 张</small>
+          </label>
+
+          <div class="toolbar-row">
+            <div class="thumb-toolbar">
+              <button id="clearBtn" class="ghost">清空</button>
+              <button id="mockExifBtn" class="ghost">模拟 EXIF 缺失</button>
+            </div>
+            <label class="compress-toggle">
+              <input id="compressToggle" type="checkbox" /> 开启压缩导出（可选）
+            </label>
+          </div>
+          <small class="hint">默认按原图尺寸与大小输出；开启后将按压缩配置输出。</small>
+          <div id="thumbGrid" class="thumb-grid"></div>
+        </article>
+
+        <article class="card preview-card">
+          <div class="preview-head">
+            <h2>② 预览与单张编辑</h2>
+            <div class="preview-switcher">
+              <button id="prevBtn" class="ghost">← 上一张</button>
+              <span id="previewIndex">0 / 0</span>
+              <button id="nextBtn" class="ghost">下一张 →</button>
+            </div>
+          </div>
+
+          <div id="previewCanvas" class="preview-canvas">
+            <img id="previewImage" alt="预览图" />
+            <div id="watermark" class="watermark" draggable="true">2026.03.08 18:30</div>
+          </div>
+          <p id="previewName" class="hint">请先上传并选择照片</p>
+
+          <div class="grid-2 edit-row">
+            <label>单张日期 <input id="singleDate" type="date" /></label>
+            <label>单张时间 <input id="singleTime" type="time" /></label>
+          </div>
+          <div class="thumb-toolbar">
+            <button id="applySingleBtn" class="primary">确认应用</button>
+            <button id="resetSingleBtn" class="secondary">恢复默认</button>
+          </div>
+        </article>
+      </section>
+
+      <aside class="right-col">
+        <article class="card settings-card">
+          <h2>③ 基础设置</h2>
+          <section class="setting-group">
+            <h3>时间戳格式</h3>
+            <label>格式模板
+              <select id="formatSelect">
+                <option value="date-dot">YYYY.MM.DD</option>
+                <option value="datetime-dot">YYYY.MM.DD HH:mm</option>
+                <option value="datetime-dash">YYYY-MM-DD HH:mm</option>
+                <option value="cn-date">YYYY年MM月DD日</option>
+              </select>
+            </label>
+          </section>
+
+          <section class="setting-group">
+            <h3>水印位置</h3>
+            <div class="position-presets">
+              <button data-pos="rb" class="chip active">右下（默认）</button>
+              <button data-pos="lb" class="chip">左下</button>
+              <button data-pos="cc" class="chip">居中</button>
+              <button data-pos="rt" class="chip">右上</button>
+              <button data-pos="lt" class="chip">左上</button>
+            </div>
+          </section>
+
+          <section class="setting-group">
+            <h3>时间批量修改</h3>
+            <div class="grid-2">
+              <label>批量加减天数 <input id="batchDays" type="number" value="0" /></label>
+              <label>批量加减小时 <input id="batchHours" type="number" value="0" /></label>
+            </div>
+            <div class="thumb-toolbar">
+              <button id="applyBatchBtn" class="secondary">应用到全部照片</button>
+              <button id="resetBatchBtn" class="ghost">批量恢复默认</button>
+            </div>
+          </section>
+        </article>
+
+        <article class="card advanced-card">
+          <div class="advanced-head">
+            <h2>高级功能</h2>
+            <button id="openSubscribeBtn" class="ghost">订阅 Pro</button>
+          </div>
+          <details open>
+            <summary>展开高级功能列表</summary>
+            <ul class="pro-list" id="proList">
+              <li class="pro-item locked" data-feature="宝宝成长水印"><span>宝宝成长水印</span><b class="pro-logo">PRO</b></li>
+              <li class="pro-item locked" data-feature="批量 200 张"><span>上传上限提升至 200 张</span><b class="pro-logo">PRO</b></li>
+              <li class="pro-item locked" data-feature="无损压缩导出"><span>无损压缩导出参数</span><b class="pro-logo">PRO</b></li>
+            </ul>
+          </details>
+
+          <section id="babyPanel" class="baby-panel hidden">
+            <h3>宝宝成长水印（Pro）</h3>
+            <div class="grid-2">
+              <label>出生日期（必填） <input type="date" id="birthday" /></label>
+              <label>昵称（可选） <input type="text" id="nickname" placeholder="如：小满" /></label>
+            </div>
+            <p id="agePreview" class="hint">开通 Pro 后可启用宝宝成长水印。</p>
+          </section>
+        </article>
+      </aside>
+    </main>
+
+    <footer class="bottom-bar card">
+      <button id="startBtn" class="start-btn">开始添加时间戳</button>
+      <div class="actions">
+        <button class="secondary">分批处理</button>
+        <button class="secondary">合并导出</button>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-meta" id="progressLabel">已处理 0/0 张</div>
+        <div class="progress"><div id="progressInner"></div></div>
+      </div>
+    </footer>
+
+    <div id="hintBubble" class="hint-bubble">等待指引：请先上传照片。</div>
+
+    <div id="subscribeModal" class="modal hidden">
+      <div class="modal-panel">
+        <h3>升级 Pro 会员</h3>
+        <p>解锁高级功能：200 张上传、宝宝成长水印、更多导出选项。</p>
+        <div class="thumb-toolbar">
+          <button id="confirmSubscribeBtn" class="primary">立即开通（模拟）</button>
+          <button id="closeSubscribeBtn" class="ghost">稍后再说</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
