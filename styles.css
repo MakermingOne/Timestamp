@@ -33,7 +33,7 @@ body { margin: 0; font-family: "PingFang SC", "Microsoft YaHei", sans-serif; col
 .preview-switcher { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
 .preview-canvas { margin-top: 10px; min-height: 420px; border: 1px solid var(--line); border-radius: 14px; background: #eaf1fa; display: grid; place-items: center; overflow: hidden; position: relative; }
 #previewImage { width: 100%; height: 100%; object-fit: contain; display: none; }
-.watermark { position: absolute; right: 12px; bottom: 12px; padding: 0; background: transparent; color: #ff9e4a; font-family: "Courier New", "Lucida Console", monospace; font-size: 24px; font-weight: 700; text-shadow: none; cursor: move; user-select: none; }
+.watermark { position: absolute; right: 12px; bottom: 12px; padding: 0; background: transparent; color: #ffffff; font-family: "Courier New", "Lucida Console", monospace; font-size: 18px; font-weight: 700; text-shadow: 0 0 4px rgba(0, 0, 0, .65); cursor: move; user-select: none; }
 .edit-row { margin: 10px 0; }
 .setting-group { padding: 10px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; background: #fff; }
 .setting-group h3 { margin: 0 0 8px; font-size: 15px; }
