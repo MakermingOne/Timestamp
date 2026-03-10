@@ -3,7 +3,6 @@ const uploadLimitText = document.getElementById('uploadLimitText');
 const thumbGrid = document.getElementById('thumbGrid');
 const uploadMeta = document.getElementById('uploadMeta');
 const clearBtn = document.getElementById('clearBtn');
-const mockExifBtn = document.getElementById('mockExifBtn');
 const compressToggle = document.getElementById('compressToggle');
 
 const planBadge = document.getElementById('planBadge');
@@ -179,6 +178,38 @@ function renderProgress() {
   progressInner.style.width = total ? `${(Math.min(progress, total) / total) * 100}%` : '0%';
 }
 
+async function getExifDateTime(file) {
+  if (typeof ExifReader === 'undefined') return null;
+  try {
+    const tags = await ExifReader.load(file);
+    const cand =
+      tags.DateTimeOriginal ||
+      tags.CreateDate ||
+      tags.DateTimeDigitized ||
+      tags.DateTime;
+
+    if (!cand) return null;
+
+    let raw = cand.value || cand.description || cand;
+    if (Array.isArray(raw)) raw = raw[0];
+    const text = String(raw || '').trim();
+    if (!text) return null;
+
+    const m = text.match(/^(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (m) {
+      const iso = `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6] || '00'}`;
+      const dt = new Date(iso);
+      if (!Number.isNaN(dt.getTime())) return dt;
+    }
+
+    const dt = new Date(text.replace(/:/g, '-').replace(' ', 'T'));
+    if (!Number.isNaN(dt.getTime())) return dt;
+  } catch (e) {
+    console.warn('EXIF 解析失败', e);
+  }
+  return null;
+}
+
 function parseSingleDateTime() {
   if (!singleDate.value || !singleTime.value) return null;
   return new Date(`${singleDate.value}T${singleTime.value}:00`);
@@ -190,7 +221,7 @@ function applySinglePreview() {
   watermark.textContent = formatByType(dt, formatSelect.value);
 }
 
-fileInput.addEventListener('change', () => {
+fileInput.addEventListener('change', async () => {
   const files = Array.from(fileInput.files || []);
   const limit = maxUpload();
   if (files.length + photos.length > limit) {
@@ -200,16 +231,23 @@ fileInput.addEventListener('change', () => {
     return;
   }
 
-  files.forEach((file) => {
-    const now = new Date();
-    photos.push({
-      name: file.name,
-      url: URL.createObjectURL(file),
-      exifOk: true,
-      originalDateTime: new Date(now),
-      currentDateTime: new Date(now),
-    });
-  });
+  await Promise.all(
+    files.map(async (file) => {
+      const exifDate = await getExifDateTime(file);
+      const baseTime = exifDate || new Date(file.lastModified || Date.now());
+      const exifOk = Boolean(exifDate);
+
+      photos.push({
+        name: file.name,
+        url: URL.createObjectURL(file),
+        exifOk,
+        originalDateTime: new Date(baseTime),
+        currentDateTime: new Date(baseTime),
+      });
+    }),
+  );
+
+  exifMissing = photos.filter((p) => !p.exifOk).length;
 
   if (currentIndex === -1 && photos.length > 0) currentIndex = 0;
   renderThumbs();
@@ -229,16 +267,6 @@ clearBtn.addEventListener('click', () => {
   renderPreview();
   renderProgress();
   setHint('已清空全部照片。');
-});
-
-mockExifBtn.addEventListener('click', () => {
-  if (!photos.length) return;
-  const idx = Math.floor(Math.random() * photos.length);
-  photos[idx].exifOk = false;
-  exifMissing = photos.filter((p) => !p.exifOk).length;
-  renderThumbs();
-  renderPreview();
-  setHint(`第 ${idx + 1} 张已标记为 EXIF 缺失。`);
 });
 
 prevBtn.addEventListener('click', () => {
