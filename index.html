@@ -10,7 +10,7 @@
     <header class="topbar">
       <div class="brand">时光印记</div>
       <nav class="top-actions">
-        <span id="planBadge" class="plan-badge">Free（最多 50 张）</span>
+        <span id="planBadge" class="plan-badge">Free（最多 20 张）</span>
         <button id="upgradeBtn" class="ghost">升级 Pro</button>
       </nav>
     </header>
@@ -21,14 +21,13 @@
           <h2>① 上传照片</h2>
           <label class="upload-dropzone" for="fileInput">
             <input id="fileInput" type="file" accept="image/*" multiple />
-            <p id="uploadLimitText">拖拽或点击上传（最多 50 张）</p>
+            <p id="uploadLimitText">拖拽或点击上传（最多 20 张）</p>
             <small id="uploadMeta">已上传 0 张 · 已解析 0 张 · 异常 0 张</small>
           </label>
 
           <div class="toolbar-row">
             <div class="thumb-toolbar">
               <button id="clearBtn" class="ghost">清空</button>
-              <button id="mockExifBtn" class="ghost">模拟 EXIF 缺失</button>
             </div>
             <label class="compress-toggle">
               <input id="compressToggle" type="checkbox" /> 开启压缩导出（可选）
@@ -72,34 +71,96 @@
             <h3>时间戳格式</h3>
             <label>格式模板
               <select id="formatSelect">
-                <option value="date-dot">YYYY.MM.DD</option>
-                <option value="datetime-dot">YYYY.MM.DD HH:mm</option>
-                <option value="datetime-dash">YYYY-MM-DD HH:mm</option>
-                <option value="cn-date">YYYY年MM月DD日</option>
+                <optgroup label="点号分隔（默认）">
+                  <option value="dot-date" selected>YYYY.MM.DD</option>
+                  <option value="dot-datetime">YYYY.MM.DD HH:mm</option>
+                  <option value="dot-datetime-sec">YYYY.MM.DD HH:mm:ss</option>
+                  <option value="dot-datetime-12h">YYYY.MM.DD hh:mm AM/PM</option>
+                </optgroup>
+                <optgroup label="国际标准">
+                  <option value="iso-date">YYYY-MM-DD (ISO)</option>
+                  <option value="iso-datetime">YYYY-MM-DD HH:mm (ISO)</option>
+                  <option value="iso-datetime-sec">YYYY-MM-DD HH:mm:ss (ISO)</option>
+                  <option value="iso-datetime-12h">YYYY-MM-DD hh:mm AM/PM</option>
+                </optgroup>
+                <optgroup label="斜杠分隔">
+                  <option value="slash-date">YYYY/MM/DD</option>
+                  <option value="slash-datetime">YYYY/MM/DD HH:mm</option>
+                  <option value="slash-datetime-sec">YYYY/MM/DD HH:mm:ss</option>
+                  <option value="slash-datetime-12h">YYYY/MM/DD hh:mm AM/PM</option>
+                </optgroup>
+                <optgroup label="美式格式">
+                  <option value="us-date">MM/DD/YYYY</option>
+                  <option value="us-datetime">MM/DD/YYYY HH:mm</option>
+                  <option value="us-date-dash">MM-DD-YYYY</option>
+                  <option value="us-datetime-dot">MM.DD.YYYY HH:mm</option>
+                  <option value="us-datetime-12h">MM/DD/YYYY hh:mm AM/PM</option>
+                </optgroup>
+                <optgroup label="英式/欧式格式">
+                  <option value="eu-date">DD/MM/YYYY</option>
+                  <option value="eu-datetime">DD/MM/YYYY HH:mm</option>
+                  <option value="eu-date-dash">DD-MM-YYYY</option>
+                  <option value="eu-datetime-dot">DD.MM.YYYY HH:mm</option>
+                  <option value="eu-datetime-12h">DD/MM/YYYY hh:mm AM/PM</option>
+                </optgroup>
+                <optgroup label="中文格式">
+                  <option value="cn-date">YYYY年MM月DD日</option>
+                  <option value="cn-datetime">YYYY年MM月DD日 HH:mm</option>
+                  <option value="cn-datetime-sec">YYYY年MM月DD日 HH:mm:ss</option>
+                  <option value="cn-datetime-12h">YYYY年MM月DD日 hh:mm AM/PM</option>
+                </optgroup>
+                <optgroup label="紧凑格式">
+                  <option value="compact-date">YYYYMMDD</option>
+                  <option value="compact-datetime">YYYYMMDD HHmm</option>
+                  <option value="compact-datetime-sec">YYYYMMDD HHmmss</option>
+                </optgroup>
+                <optgroup label="自定义">
+                  <option value="custom">自定义格式...</option>
+                </optgroup>
               </select>
             </label>
+            <div id="customFormatPanel" class="custom-format-panel hidden" style="margin-top:10px;">
+              <label>自定义格式字符串
+                <input id="customFormatInput" type="text" placeholder="如: YYYY.MM.DD HH:mm" value="YYYY.MM.DD HH:mm" />
+              </label>
+              <div class="format-help">
+                <small class="hint">
+                  可用占位符: <code>YYYY</code>年 <code>MM</code>月 <code>DD</code>日 
+                  <code>HH</code>时(24) <code>hh</code>时(12) <code>mm</code>分 <code>ss</code>秒 
+                  <code>AM/PM</code>上下午
+                </small>
+              </div>
+              <div class="format-preview" style="margin-top:8px; padding:8px; background:#f5f7fa; border-radius:8px;">
+                <small>预览: <span id="formatPreview" style="font-family:monospace; color:var(--primary);">2026.03.08 18:30</span></small>
+              </div>
+            </div>
           </section>
 
           <section class="setting-group">
             <h3>水印位置</h3>
-            <div class="position-presets">
-              <button data-pos="rb" class="chip active">右下（默认）</button>
-              <button data-pos="lb" class="chip">左下</button>
-              <button data-pos="cc" class="chip">居中</button>
-              <button data-pos="rt" class="chip">右上</button>
-              <button data-pos="lt" class="chip">左上</button>
+            <div class="position-visual" id="positionVisual">
+              <div class="pos-grid">
+                <button data-pos="lt" class="pos-cell" title="左上"></button>
+                <button data-pos="ct" class="pos-cell" title="上中"></button>
+                <button data-pos="rt" class="pos-cell" title="右上"></button>
+                <button data-pos="lc" class="pos-cell" title="左中"></button>
+                <button data-pos="cc" class="pos-cell" title="居中"></button>
+                <button data-pos="rc" class="pos-cell" title="右中"></button>
+                <button data-pos="lb" class="pos-cell" title="左下"></button>
+                <button data-pos="cb" class="pos-cell" title="下中"></button>
+                <button data-pos="rb" class="pos-cell active" title="右下"></button>
+              </div>
             </div>
-          </section>
-
-          <section class="setting-group">
-            <h3>时间批量修改</h3>
-            <div class="grid-2">
-              <label>批量加减天数 <input id="batchDays" type="number" value="0" /></label>
-              <label>批量加减小时 <input id="batchHours" type="number" value="0" /></label>
-            </div>
-            <div class="thumb-toolbar">
-              <button id="applyBatchBtn" class="secondary">应用到全部照片</button>
-              <button id="resetBatchBtn" class="ghost">批量恢复默认</button>
+            <div class="margin-control">
+              <label>边缘距离
+                <div class="margin-inputs">
+                  <input id="marginValue" type="number" value="2" min="0" step="0.1" />
+                  <select id="marginUnit">
+                    <option value="mm">mm</option>
+                    <option value="px">px</option>
+                  </select>
+                </div>
+              </label>
             </div>
           </section>
         </article>
@@ -112,11 +173,24 @@
           <details open>
             <summary>展开高级功能列表</summary>
             <ul class="pro-list" id="proList">
-              <li class="pro-item locked" data-feature="宝宝成长水印"><span>宝宝成长水印</span><b class="pro-logo">PRO</b></li>
+              <li class="pro-item locked" data-feature="宝宝成长水印" data-panel="babyPanel"><span>宝宝成长水印</span><b class="pro-logo">PRO</b></li>
               <li class="pro-item locked" data-feature="批量 200 张"><span>上传上限提升至 200 张</span><b class="pro-logo">PRO</b></li>
               <li class="pro-item locked" data-feature="无损压缩导出"><span>无损压缩导出参数</span><b class="pro-logo">PRO</b></li>
+              <li class="pro-item locked" data-feature="时间批量修改" data-panel="batchPanel"><span>时间批量修改</span><b class="pro-logo">PRO</b></li>
             </ul>
           </details>
+
+          <section id="batchPanel" class="batch-panel hidden">
+            <h3>时间批量修改（Pro）</h3>
+            <div class="grid-2">
+              <label>批量加减天数 <input id="batchDays" type="number" value="0" /></label>
+              <label>批量加减小时 <input id="batchHours" type="number" value="0" /></label>
+            </div>
+            <div class="thumb-toolbar" style="margin-top:10px;">
+              <button id="applyBatchBtn" class="secondary">应用到全部照片</button>
+              <button id="resetBatchBtn" class="ghost">批量恢复默认</button>
+            </div>
+          </section>
 
           <section id="babyPanel" class="baby-panel hidden">
             <h3>宝宝成长水印（Pro）</h3>
@@ -124,6 +198,32 @@
               <label>出生日期（必填） <input type="date" id="birthday" /></label>
               <label>昵称（可选） <input type="text" id="nickname" placeholder="如：小满" /></label>
             </div>
+            
+            <section class="setting-group" style="margin-top:12px;">
+              <h4>显示模式</h4>
+              <label>
+                <select id="babyDisplayMode">
+                  <option value="both">同时显示时间戳和成长印记</option>
+                  <option value="time-only">仅显示时间戳</option>
+                  <option value="baby-only">仅显示成长印记</option>
+                </select>
+              </label>
+            </section>
+            
+            <section class="setting-group" style="margin-top:12px;">
+              <h4>成长印记格式</h4>
+              <label>格式模板
+                <select id="babyFormatSelect">
+                  <option value="age-short">X岁X个月</option>
+                  <option value="age-months">X个月X天</option>
+                  <option value="age-full">X岁X个月X天</option>
+                  <option value="nickname-age-short">昵称 X岁X个月</option>
+                  <option value="nickname-age-months">昵称 X个月X天</option>
+                  <option value="nickname-age-full">昵称 X岁X个月X天</option>
+                </select>
+              </label>
+            </section>
+            
             <p id="agePreview" class="hint">开通 Pro 后可启用宝宝成长水印。</p>
           </section>
         </article>
@@ -155,6 +255,6 @@
       </div>
     </div>
 
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>

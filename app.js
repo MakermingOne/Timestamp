@@ -1,9 +1,10 @@
+import { parse } from 'https://esm.sh/exifr@7.1.3/dist/full.esm.js';
+
 const fileInput = document.getElementById('fileInput');
 const uploadLimitText = document.getElementById('uploadLimitText');
 const thumbGrid = document.getElementById('thumbGrid');
 const uploadMeta = document.getElementById('uploadMeta');
 const clearBtn = document.getElementById('clearBtn');
-const mockExifBtn = document.getElementById('mockExifBtn');
 const compressToggle = document.getElementById('compressToggle');
 
 const planBadge = document.getElementById('planBadge');
@@ -25,6 +26,9 @@ const progressLabel = document.getElementById('progressLabel');
 const progressInner = document.getElementById('progressInner');
 
 const formatSelect = document.getElementById('formatSelect');
+const customFormatPanel = document.getElementById('customFormatPanel');
+const customFormatInput = document.getElementById('customFormatInput');
+const formatPreview = document.getElementById('formatPreview');
 const applyBatchBtn = document.getElementById('applyBatchBtn');
 const resetBatchBtn = document.getElementById('resetBatchBtn');
 const batchDays = document.getElementById('batchDays');
@@ -40,18 +44,34 @@ const hintBubble = document.getElementById('hintBubble');
 
 const proList = document.getElementById('proList');
 const babyPanel = document.getElementById('babyPanel');
+const batchPanel = document.getElementById('batchPanel');
 const agePreview = document.getElementById('agePreview');
 const birthdayInput = document.getElementById('birthday');
 const nicknameInput = document.getElementById('nickname');
+const babyDisplayMode = document.getElementById('babyDisplayMode');
+const babyFormatSelect = document.getElementById('babyFormatSelect');
+
+// 位置选择器和边缘距离
+const positionVisual = document.getElementById('positionVisual');
+const marginValue = document.getElementById('marginValue');
+const marginUnit = document.getElementById('marginUnit');
 
 let photos = [];
 let exifMissing = 0;
 let currentIndex = -1;
 let progress = 0;
 let isPro = false;
+// 从DOM读取初始位置
+const getInitialPos = () => {
+  const activeCell = document.querySelector('.pos-cell.active');
+  return activeCell?.dataset.pos || 'rb';
+};
+
+let watermarkPos = getInitialPos(); // lt, ct, rt, lc, cc, rc, lb, cb, rb
+let watermarkMargin = { value: 2, unit: 'mm' }; // 默认 2mm
 
 function maxUpload() {
-  return isPro ? 200 : 50;
+  return isPro ? 200 : 20;
 }
 
 function setHint(text) {
@@ -69,7 +89,7 @@ function closeSubscribe() {
 
 function refreshPlanUI() {
   const limit = maxUpload();
-  planBadge.textContent = isPro ? 'Pro（最多 200 张）' : 'Free（最多 50 张）';
+  planBadge.textContent = isPro ? 'Pro（最多 200 张）' : 'Free（最多 20 张）';
   uploadLimitText.textContent = `拖拽或点击上传（最多 ${limit} 张）`;
 
   proList.querySelectorAll('.pro-item').forEach((item) => {
@@ -78,13 +98,14 @@ function refreshPlanUI() {
   });
 
   if (isPro) {
-    babyPanel.classList.remove('hidden');
+    // 不自动显示所有面板，由用户点击决定
     agePreview.textContent = '年龄预览：请先输入出生日期';
   } else {
     babyPanel.classList.add('hidden');
+    batchPanel.classList.add('hidden');
     agePreview.textContent = '开通 Pro 后可启用宝宝成长水印。';
-    if (photos.length > 50) {
-      setHint('当前照片超过 Free 上限 50 张，请升级 Pro 或清空后重传。');
+    if (photos.length > 20) {
+      setHint('当前照片超过 Free 上限 20 张，请升级 Pro 或清空后重传。');
     }
   }
 }
@@ -93,18 +114,104 @@ function pad(v) {
   return String(v).padStart(2, '0');
 }
 
+function format12h(hours, minutes) {
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const h12 = hours % 12 || 12;
+  return `${pad(h12)}:${minutes} ${ampm}`;
+}
+
 function formatByType(date, type) {
   const y = date.getFullYear();
   const m = pad(date.getMonth() + 1);
   const d = pad(date.getDate());
   const hh = pad(date.getHours());
   const mm = pad(date.getMinutes());
+  const ss = pad(date.getSeconds());
+  const h12 = pad(date.getHours() % 12 || 12);
+  const ampm = date.getHours() >= 12 ? 'PM' : 'AM';
 
-  if (type === 'date-dot') return `${y}.${m}.${d}`;
-  if (type === 'datetime-dot') return `${y}.${m}.${d} ${hh}:${mm}`;
-  if (type === 'datetime-dash') return `${y}-${m}-${d} ${hh}:${mm}`;
+  // 点号分隔（默认）
+  if (type === 'dot-date') return `${y}.${m}.${d}`;
+  if (type === 'dot-datetime') return `${y}.${m}.${d} ${hh}:${mm}`;
+  if (type === 'dot-datetime-sec') return `${y}.${m}.${d} ${hh}:${mm}:${ss}`;
+  if (type === 'dot-datetime-12h') return `${y}.${m}.${d} ${h12}:${mm} ${ampm}`;
+  
+  // ISO 格式
+  if (type === 'iso-date') return `${y}-${m}-${d}`;
+  if (type === 'iso-datetime') return `${y}-${m}-${d} ${hh}:${mm}`;
+  if (type === 'iso-datetime-sec') return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+  if (type === 'iso-datetime-12h') return `${y}-${m}-${d} ${h12}:${mm} ${ampm}`;
+  
+  // 斜杠分隔
+  if (type === 'slash-date') return `${y}/${m}/${d}`;
+  if (type === 'slash-datetime') return `${y}/${m}/${d} ${hh}:${mm}`;
+  if (type === 'slash-datetime-sec') return `${y}/${m}/${d} ${hh}:${mm}:${ss}`;
+  if (type === 'slash-datetime-12h') return `${y}/${m}/${d} ${h12}:${mm} ${ampm}`;
+  
+  // 美式格式
+  if (type === 'us-date') return `${m}/${d}/${y}`;
+  if (type === 'us-datetime') return `${m}/${d}/${y} ${hh}:${mm}`;
+  if (type === 'us-date-dash') return `${m}-${d}-${y}`;
+  if (type === 'us-datetime-dot') return `${m}.${d}.${y} ${hh}:${mm}`;
+  if (type === 'us-datetime-12h') return `${m}/${d}/${y} ${h12}:${mm} ${ampm}`;
+  
+  // 英式/欧式格式
+  if (type === 'eu-date') return `${d}/${m}/${y}`;
+  if (type === 'eu-datetime') return `${d}/${m}/${y} ${hh}:${mm}`;
+  if (type === 'eu-date-dash') return `${d}-${m}-${y}`;
+  if (type === 'eu-datetime-dot') return `${d}.${m}.${y} ${hh}:${mm}`;
+  if (type === 'eu-datetime-12h') return `${d}/${m}/${y} ${h12}:${mm} ${ampm}`;
+  
+  // 中文格式
   if (type === 'cn-date') return `${y}年${m}月${d}日`;
+  if (type === 'cn-datetime') return `${y}年${m}月${d}日 ${hh}:${mm}`;
+  if (type === 'cn-datetime-sec') return `${y}年${m}月${d}日 ${hh}:${mm}:${ss}`;
+  if (type === 'cn-datetime-12h') return `${y}年${m}月${d}日 ${h12}:${mm} ${ampm}`;
+  
+  // 紧凑格式
+  if (type === 'compact-date') return `${y}${m}${d}`;
+  if (type === 'compact-datetime') return `${y}${m}${d} ${hh}${mm}`;
+  if (type === 'compact-datetime-sec') return `${y}${m}${d} ${hh}${mm}${ss}`;
+  
+  // 自定义格式
+  if (type === 'custom' && customFormatInput) {
+    return applyCustomFormat(date, customFormatInput.value);
+  }
+  
+  // 默认
   return `${y}.${m}.${d} ${hh}:${mm}`;
+}
+
+function applyCustomFormat(date, format) {
+  const y = date.getFullYear();
+  const m = pad(date.getMonth() + 1);
+  const d = pad(date.getDate());
+  const hh = pad(date.getHours());
+  const h12 = pad(date.getHours() % 12 || 12);
+  const mm = pad(date.getMinutes());
+  const ss = pad(date.getSeconds());
+  const ampm = date.getHours() >= 12 ? 'PM' : 'AM';
+  
+  return format
+    .replace(/YYYY/g, y)
+    .replace(/MM/g, m)
+    .replace(/DD/g, d)
+    .replace(/HH/g, hh)
+    .replace(/hh/g, h12)
+    .replace(/mm/g, mm)
+    .replace(/ss/g, ss)
+    .replace(/AM\/PM/g, ampm);
+}
+
+function updateFormatPreview() {
+  if (!formatPreview) return;
+  const now = new Date();
+  const type = formatSelect.value;
+  if (type === 'custom' && customFormatInput) {
+    formatPreview.textContent = applyCustomFormat(now, customFormatInput.value);
+  } else {
+    formatPreview.textContent = formatByType(now, type);
+  }
 }
 
 function toDateInputValue(date) {
@@ -115,12 +222,133 @@ function toTimeInputValue(date) {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+// 计算宝宝年龄文本
+function formatBabyAge(birthDate, photoDate, format, nickname) {
+  const diffTime = photoDate.getTime() - birthDate.getTime();
+  if (diffTime < 0) return '照片时间早于出生';
+  
+  const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const years = Math.floor(totalDays / 365);
+  const months = Math.floor((totalDays % 365) / 30);
+  const days = totalDays % 30;
+  
+  const totalMonths = Math.floor(totalDays / 30);
+  const remainingDays = totalDays % 30;
+  
+  const name = nickname || '宝宝';
+  
+  switch (format) {
+    case 'age-short':
+      return years > 0 ? `${years}岁${months}个月` : `${months}个月`;
+    case 'age-months':
+      return `${totalMonths}个月${remainingDays}天`;
+    case 'age-full':
+      return years > 0 ? `${years}岁${months}个月${days}天` : `${months}个月${days}天`;
+    case 'nickname-age-short':
+      return years > 0 ? `${name} ${years}岁${months}个月` : `${name} ${months}个月`;
+    case 'nickname-age-months':
+      return `${name} ${totalMonths}个月${remainingDays}天`;
+    case 'nickname-age-full':
+      return years > 0 ? `${name} ${years}岁${months}个月${days}天` : `${name} ${months}个月${days}天`;
+    default:
+      return `${name} ${years}岁${months}个月`;
+  }
+}
+
+// 获取边缘距离的像素值
+function getMarginPixels() {
+  const value = parseFloat(marginValue?.value || 2);
+  const unit = marginUnit?.value || 'mm';
+  
+  if (unit === 'mm') {
+    // 假设标准屏幕密度为 96 DPI，1mm ≈ 3.78px
+    return Math.round(value * 3.78);
+  }
+  return Math.round(value);
+}
+
+// 更新水印位置
+function updateWatermarkPosition() {
+  const margin = getMarginPixels();
+  const pos = watermarkPos;
+  
+  watermark.style.transform = 'none';
+  watermark.style.left = 'auto';
+  watermark.style.right = 'auto';
+  watermark.style.top = 'auto';
+  watermark.style.bottom = 'auto';
+  
+  // 解析位置
+  const [h, v] = pos.split('');
+  
+  // 水平位置
+  if (h === 'l') {
+    watermark.style.left = `${margin}px`;
+  } else if (h === 'c') {
+    watermark.style.left = '50%';
+    watermark.style.transform = 'translateX(-50%)';
+  } else if (h === 'r') {
+    watermark.style.right = `${margin}px`;
+  }
+  
+  // 垂直位置
+  if (v === 't') {
+    watermark.style.top = `${margin}px`;
+  } else if (v === 'c') {
+    if (pos === 'cc') {
+      watermark.style.top = '50%';
+      watermark.style.transform = 'translate(-50%, -50%)';
+    } else {
+      watermark.style.top = '50%';
+      watermark.style.transform = h === 'c' ? 'translate(-50%, -50%)' : 'translateY(-50%)';
+    }
+  } else if (v === 'b') {
+    watermark.style.bottom = `${margin}px`;
+  }
+}
+
+// 更新水印文本（合并时间和宝宝水印）
 function updateCurrentWatermarkText() {
+  // 无照片时显示默认时间
   if (currentIndex < 0 || !photos[currentIndex]) {
-    watermark.textContent = '2026.03.08 18:30';
+    const now = new Date();
+    watermark.textContent = formatByType(now, formatSelect?.value || 'dot-datetime');
+    updateWatermarkPosition();
     return;
   }
-  watermark.textContent = formatByType(photos[currentIndex].currentDateTime, formatSelect.value);
+  
+  const photo = photos[currentIndex];
+  const displayMode = babyDisplayMode ? babyDisplayMode.value : 'time-only';
+  
+  let timeText = '';
+  let babyText = '';
+  
+  // 时间戳部分
+  if (displayMode === 'time-only' || displayMode === 'both') {
+    timeText = formatByType(photo.currentDateTime, formatSelect?.value || 'dot-datetime');
+  }
+  
+  // 宝宝成长印记部分
+  if ((displayMode === 'baby-only' || displayMode === 'both') && isPro) {
+    const birthday = birthdayInput?.value;
+    if (birthday) {
+      const birthDate = new Date(birthday);
+      const nickname = nicknameInput?.value || '';
+      const format = babyFormatSelect?.value || 'age-short';
+      babyText = formatBabyAge(birthDate, photo.currentDateTime, format, nickname);
+    }
+  }
+  
+  // 合并显示（用空格分隔）
+  if (timeText && babyText) {
+    watermark.textContent = `${timeText} ${babyText}`;
+  } else if (timeText) {
+    watermark.textContent = timeText;
+  } else if (babyText) {
+    watermark.textContent = babyText;
+  } else {
+    watermark.textContent = formatByType(photo.currentDateTime, formatSelect?.value || 'dot-datetime');
+  }
 }
 
 function renderMeta() {
@@ -158,7 +386,7 @@ function renderPreview() {
     previewIndex.textContent = '0 / 0';
     singleDate.value = '';
     singleTime.value = '';
-    updateCurrentWatermarkText();
+    watermark.style.display = 'none';
     return;
   }
   const photo = photos[currentIndex];
@@ -170,7 +398,9 @@ function renderPreview() {
   nextBtn.disabled = currentIndex >= photos.length - 1;
   singleDate.value = toDateInputValue(photo.currentDateTime);
   singleTime.value = toTimeInputValue(photo.currentDateTime);
+  watermark.style.display = 'block';
   updateCurrentWatermarkText();
+  updateWatermarkPosition();
 }
 
 function renderProgress() {
@@ -187,11 +417,16 @@ function parseSingleDateTime() {
 function applySinglePreview() {
   const dt = parseSingleDateTime();
   if (!dt || Number.isNaN(dt.getTime())) return;
-  watermark.textContent = formatByType(dt, formatSelect.value);
+  updateCurrentWatermarkText();
 }
 
-fileInput.addEventListener('change', () => {
+// 文件上传处理 - 使用change事件，确保每次都能触发
+fileInput.addEventListener('change', handleFileUpload);
+
+async function handleFileUpload() {
   const files = Array.from(fileInput.files || []);
+  if (files.length === 0) return;
+  
   const limit = maxUpload();
   if (files.length + photos.length > limit) {
     setHint(`上传失败：当前版本最多 ${limit} 张。${isPro ? '' : '升级 Pro 可提升到 200 张。'}`);
@@ -200,24 +435,65 @@ fileInput.addEventListener('change', () => {
     return;
   }
 
-  files.forEach((file) => {
-    const now = new Date();
-    photos.push({
-      name: file.name,
-      url: URL.createObjectURL(file),
-      exifOk: true,
-      originalDateTime: new Date(now),
-      currentDateTime: new Date(now),
-    });
-  });
+  setHint('正在解析照片 EXIF 信息...');
 
-  if (currentIndex === -1 && photos.length > 0) currentIndex = 0;
-  renderThumbs();
-  renderPreview();
-  renderProgress();
-  setHint(`已上传 ${files.length} 张。请选择照片并点击“开始添加时间戳”。`);
-  fileInput.value = '';
-});
+  try {
+    const newPhotos = [];
+    
+    for (const file of files) {
+      const url = URL.createObjectURL(file);
+      let exifDate = null;
+      let exifOk = false;
+      
+      try {
+        const exifData = await parse(file, { datetime: true });
+        if (exifData && exifData.DateTimeOriginal) {
+          exifDate = new Date(exifData.DateTimeOriginal);
+          exifOk = true;
+        } else if (exifData && exifData.CreateDate) {
+          exifDate = new Date(exifData.CreateDate);
+          exifOk = true;
+        } else if (exifData && exifData.ModifyDate) {
+          exifDate = new Date(exifData.ModifyDate);
+          exifOk = true;
+        }
+      } catch (e) {
+        // EXIF 解析失败
+      }
+      
+      // 如果没有 EXIF 日期，使用文件修改时间
+      const finalDate = exifDate || new Date(file.lastModified);
+      if (!exifOk) exifMissing += 1;
+      
+      newPhotos.push({
+        name: file.name,
+        url: url,
+        exifOk: exifOk,
+        originalDateTime: new Date(finalDate),
+        currentDateTime: new Date(finalDate),
+      });
+    }
+
+    photos.push(...newPhotos);
+
+    if (currentIndex === -1 && photos.length > 0) {
+      currentIndex = 0;
+    }
+    
+    renderThumbs();
+    renderPreview();
+    renderProgress();
+    updateCurrentWatermarkText();
+    setHint(`已上传 ${files.length} 张。请选择照片并点击"开始添加时间戳"。`);
+  } catch (err) {
+    setHint('上传失败：' + err.message);
+  }
+  
+  // 延迟清空input，确保可以重复选择相同文件
+  setTimeout(() => {
+    fileInput.value = '';
+  }, 100);
+}
 
 clearBtn.addEventListener('click', () => {
   photos.forEach((p) => URL.revokeObjectURL(p.url));
@@ -229,16 +505,6 @@ clearBtn.addEventListener('click', () => {
   renderPreview();
   renderProgress();
   setHint('已清空全部照片。');
-});
-
-mockExifBtn.addEventListener('click', () => {
-  if (!photos.length) return;
-  const idx = Math.floor(Math.random() * photos.length);
-  photos[idx].exifOk = false;
-  exifMissing = photos.filter((p) => !p.exifOk).length;
-  renderThumbs();
-  renderPreview();
-  setHint(`第 ${idx + 1} 张已标记为 EXIF 缺失。`);
 });
 
 prevBtn.addEventListener('click', () => {
@@ -259,8 +525,38 @@ nextBtn.addEventListener('click', () => {
 
 singleDate.addEventListener('input', applySinglePreview);
 singleTime.addEventListener('input', applySinglePreview);
-formatSelect.addEventListener('change', updateCurrentWatermarkText);
+// 格式选择变化处理
+formatSelect?.addEventListener('change', () => {
+  const isCustom = formatSelect.value === 'custom';
+  
+  // 显示/隐藏自定义格式面板
+  if (customFormatPanel) {
+    customFormatPanel.classList.toggle('hidden', !isCustom);
+  }
+  
+  // 立即更新水印显示
+  updateFormatPreview();
+  
+  // 如果有照片，立即更新当前照片的水印
+  if (currentIndex >= 0 && photos[currentIndex]) {
+    updateCurrentWatermarkText();
+  } else {
+    // 没有照片时也更新默认显示
+    const now = new Date();
+    watermark.textContent = formatByType(now, formatSelect.value);
+  }
+  
+  setHint(`时间格式已切换为: ${formatSelect.options[formatSelect.selectedIndex].text}`);
+});
 compressToggle.addEventListener('change', renderProgress);
+
+// 自定义格式输入监听
+if (customFormatInput) {
+  customFormatInput.addEventListener('input', () => {
+    updateFormatPreview();
+    updateCurrentWatermarkText();
+  });
+}
 
 applySingleBtn.addEventListener('click', () => {
   if (currentIndex < 0 || !photos[currentIndex]) return;
@@ -328,41 +624,39 @@ previewCanvas.addEventListener('dragover', (e) => {
   watermark.style.top = `${y}px`;
   watermark.style.right = 'auto';
   watermark.style.bottom = 'auto';
+  watermark.style.transform = 'none';
 });
 
-document.querySelectorAll('.chip').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.chip').forEach((b) => b.classList.remove('active'));
-    btn.classList.add('active');
-    const pos = btn.dataset.pos;
-
-    watermark.style.transform = 'none';
-    watermark.style.left = 'auto';
-    watermark.style.right = '12px';
-    watermark.style.top = 'auto';
-    watermark.style.bottom = '12px';
-
-    if (pos === 'lb') {
-      watermark.style.left = '12px';
-      watermark.style.right = 'auto';
-    } else if (pos === 'cc') {
-      watermark.style.left = '50%';
-      watermark.style.top = '50%';
-      watermark.style.right = 'auto';
-      watermark.style.bottom = 'auto';
-      watermark.style.transform = 'translate(-50%, -50%)';
-    } else if (pos === 'rt') {
-      watermark.style.top = '12px';
-      watermark.style.bottom = 'auto';
-    } else if (pos === 'lt') {
-      watermark.style.left = '12px';
-      watermark.style.right = 'auto';
-      watermark.style.top = '12px';
-      watermark.style.bottom = 'auto';
-    }
-    setHint(`水印位置已切换为 ${btn.textContent}。`);
+// 可视化位置选择器
+if (positionVisual) {
+  positionVisual.querySelectorAll('.pos-cell').forEach((cell) => {
+    cell.addEventListener('click', () => {
+      positionVisual.querySelectorAll('.pos-cell').forEach((c) => c.classList.remove('active'));
+      cell.classList.add('active');
+      watermarkPos = cell.dataset.pos;
+      updateWatermarkPosition();
+      setHint(`水印位置已设置为 ${cell.title}`);
+    });
   });
+}
+
+// 边缘距离控制 - 使用input和change事件确保实时更新
+marginValue?.addEventListener('input', () => {
+  const val = parseFloat(marginValue.value);
+  if (!isNaN(val) && val >= 0) {
+    watermarkMargin.value = val;
+    updateWatermarkPosition();
+  }
 });
+
+marginUnit?.addEventListener('change', () => {
+  watermarkMargin.unit = marginUnit.value;
+  updateWatermarkPosition();
+});
+
+// 确保边缘距离默认值正确
+watermarkMargin.value = parseFloat(marginValue?.value || 2);
+watermarkMargin.unit = marginUnit?.value || 'mm';
 
 startBtn.addEventListener('click', () => {
   if (!photos.length) {
@@ -388,7 +682,25 @@ proList.addEventListener('click', (e) => {
   const item = e.target.closest('.pro-item');
   if (!item) return;
   if (!isPro) {
-    openSubscribe(`功能“${item.dataset.feature}”仅限 Pro`);
+    openSubscribe(`功能"${item.dataset.feature}"仅限 Pro`);
+    return;
+  }
+  
+  // Pro用户点击功能项时切换对应面板
+  const panelId = item.dataset.panel;
+  if (panelId) {
+    const panel = document.getElementById(panelId);
+    if (panel) {
+      const isHidden = panel.classList.contains('hidden');
+      // 先隐藏所有面板
+      babyPanel.classList.add('hidden');
+      batchPanel.classList.add('hidden');
+      // 切换当前面板
+      if (isHidden) {
+        panel.classList.remove('hidden');
+        setHint(`已展开：${item.dataset.feature}`);
+      }
+    }
   }
 });
 
@@ -416,11 +728,35 @@ function updateAgePreview() {
     : `年龄预览：${nickname}${Math.floor(months / 12)}岁 ${months % 12}个月`;
 }
 
-birthdayInput.addEventListener('change', updateAgePreview);
-nicknameInput.addEventListener('input', updateAgePreview);
+birthdayInput.addEventListener('change', () => {
+  updateAgePreview();
+  updateCurrentWatermarkText();
+});
+nicknameInput.addEventListener('input', () => {
+  updateAgePreview();
+  updateCurrentWatermarkText();
+});
 
+// 宝宝水印显示模式切换
+if (babyDisplayMode) {
+  babyDisplayMode.addEventListener('change', updateCurrentWatermarkText);
+}
+
+// 宝宝水印格式切换
+if (babyFormatSelect) {
+  babyFormatSelect.addEventListener('change', updateCurrentWatermarkText);
+}
+
+// 初始化
 refreshPlanUI();
 renderMeta();
 renderPreview();
 renderProgress();
-setHint('等待指引：上传照片后，点击“开始添加时间戳”。');
+updateFormatPreview();
+
+// 初始状态：无照片时显示默认格式的时间
+const now = new Date();
+watermark.textContent = formatByType(now, formatSelect?.value || 'dot-datetime');
+updateWatermarkPosition();
+
+setHint('等待指引：上传照片后，点击"开始添加时间戳"。');
