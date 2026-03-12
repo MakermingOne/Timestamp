@@ -3,15 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>时光印记 · 照片批量时间戳工具</title>
+    <title>时光印记·Timestamp - 照片批量时间戳工具</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="topbar">
-      <div class="brand">时光印记</div>
+      <div class="brand-section">
+        <div class="brand">时光印记·Timestamp</div>
+        <div class="brand-tagline">时间水印批量添加，成长每一步都有迹可循</div>
+      </div>
       <nav class="top-actions">
         <span id="planBadge" class="plan-badge">Free（最多 20 张）</span>
         <button id="upgradeBtn" class="ghost">升级 Pro</button>
+        <a href="#" id="supportLink" class="support-link-small">💙 支持一下</a>
       </nav>
     </header>
 
@@ -29,17 +33,16 @@
             <div class="thumb-toolbar">
               <button id="clearBtn" class="ghost">清空</button>
             </div>
-            <label class="compress-toggle">
-              <input id="compressToggle" type="checkbox" /> 开启压缩导出（可选）
+            <label class="compress-toggle pro-only">
+              <input id="compressToggle" type="checkbox" disabled /> 开启压缩导出（Pro）
             </label>
           </div>
-          <small class="hint">默认按原图尺寸与大小输出；开启后将按压缩配置输出。</small>
           <div id="thumbGrid" class="thumb-grid"></div>
         </article>
 
         <article class="card preview-card">
           <div class="preview-head">
-            <h2>② 预览与单张编辑</h2>
+            <h2>② 预览与 EXIF 信息</h2>
             <div class="preview-switcher">
               <button id="prevBtn" class="ghost">← 上一张</button>
               <span id="previewIndex">0 / 0</span>
@@ -49,17 +52,34 @@
 
           <div id="previewCanvas" class="preview-canvas">
             <img id="previewImage" alt="预览图" />
-            <div id="watermark" class="watermark" draggable="true">2026.03.08 18:30</div>
+            <div id="watermark" class="watermark" draggable="true">
+              <span id="watermarkLine1"></span>
+              <span id="watermarkLine2"></span>
+            </div>
           </div>
           <p id="previewName" class="hint">请先上传并选择照片</p>
-
-          <div class="grid-2 edit-row">
-            <label>单张日期 <input id="singleDate" type="date" /></label>
-            <label>单张时间 <input id="singleTime" type="time" /></label>
-          </div>
-          <div class="thumb-toolbar">
-            <button id="applySingleBtn" class="primary">确认应用</button>
-            <button id="resetSingleBtn" class="secondary">恢复默认</button>
+          
+          <!-- EXIF 信息展示区 -->
+          <div id="exifPanel" class="exif-panel hidden">
+            <h4>📷 EXIF 信息</h4>
+            <div class="exif-grid" id="exifGrid">
+              <div class="exif-item">
+                <span class="exif-label">拍摄时间</span>
+                <span class="exif-value" id="exifDateTime">--</span>
+              </div>
+              <div class="exif-item">
+                <span class="exif-label">相机型号</span>
+                <span class="exif-value" id="exifCamera">--</span>
+              </div>
+              <div class="exif-item">
+                <span class="exif-label">分辨率</span>
+                <span class="exif-value" id="exifResolution">--</span>
+              </div>
+              <div class="exif-item">
+                <span class="exif-label">文件大小</span>
+                <span class="exif-value" id="exifFileSize">--</span>
+              </div>
+            </div>
           </div>
         </article>
       </section>
@@ -131,7 +151,7 @@
                 </small>
               </div>
               <div class="format-preview" style="margin-top:8px; padding:8px; background:#f5f7fa; border-radius:8px;">
-                <small>预览: <span id="formatPreview" style="font-family:monospace; color:var(--primary);">2026.03.08 18:30</span></small>
+                <small>预览: <span id="formatPreview" style="font-family:system-ui, -apple-system, sans-serif; color:var(--primary);">2026.03.08 18:30</span></small>
               </div>
             </div>
           </section>
@@ -154,7 +174,7 @@
             <div class="margin-control">
               <label>边缘距离
                 <div class="margin-inputs">
-                  <input id="marginValue" type="number" value="2" min="0" step="0.1" />
+                  <input id="marginValue" type="number" value="3" min="0" step="0.1" />
                   <select id="marginUnit">
                     <option value="mm">mm</option>
                     <option value="px">px</option>
@@ -170,87 +190,221 @@
             <h2>高级功能</h2>
             <button id="openSubscribeBtn" class="ghost">订阅 Pro</button>
           </div>
-          <details open>
-            <summary>展开高级功能列表</summary>
-            <ul class="pro-list" id="proList">
-              <li class="pro-item locked" data-feature="宝宝成长水印" data-panel="babyPanel"><span>宝宝成长水印</span><b class="pro-logo">PRO</b></li>
-              <li class="pro-item locked" data-feature="批量 200 张"><span>上传上限提升至 200 张</span><b class="pro-logo">PRO</b></li>
-              <li class="pro-item locked" data-feature="无损压缩导出"><span>无损压缩导出参数</span><b class="pro-logo">PRO</b></li>
-              <li class="pro-item locked" data-feature="时间批量修改" data-panel="batchPanel"><span>时间批量修改</span><b class="pro-logo">PRO</b></li>
-            </ul>
-          </details>
-
-          <section id="batchPanel" class="batch-panel hidden">
-            <h3>时间批量修改（Pro）</h3>
-            <div class="grid-2">
-              <label>批量加减天数 <input id="batchDays" type="number" value="0" /></label>
-              <label>批量加减小时 <input id="batchHours" type="number" value="0" /></label>
-            </div>
-            <div class="thumb-toolbar" style="margin-top:10px;">
-              <button id="applyBatchBtn" class="secondary">应用到全部照片</button>
-              <button id="resetBatchBtn" class="ghost">批量恢复默认</button>
-            </div>
-          </section>
-
-          <section id="babyPanel" class="baby-panel hidden">
-            <h3>宝宝成长水印（Pro）</h3>
-            <div class="grid-2">
-              <label>出生日期（必填） <input type="date" id="birthday" /></label>
-              <label>昵称（可选） <input type="text" id="nickname" placeholder="如：小满" /></label>
-            </div>
+          
+          <!-- 高级功能列表 - 每个功能独立展开 -->
+          <ul class="pro-list-new" id="proList">
+            <li class="pro-item-new locked" data-feature="宝宝成长水印" data-panel="babyPanel">
+              <div class="pro-item-header">
+                <span>宝宝成长水印</span>
+                <b class="pro-logo">PRO</b>
+                <span class="expand-icon">▼</span>
+              </div>
+              <div class="pro-item-content hidden">
+                <p class="pro-desc">为宝宝的照片自动添加年龄水印，记录成长时光。支持多种格式：X岁X个月、X个月X天、X天等。</p>
+                <section id="babyPanel" class="baby-panel-inner hidden">
+                  <div class="grid-2">
+                    <label>出生日期（必填） <input type="date" id="birthday" /></label>
+                    <label>昵称（可选） <input type="text" id="nickname" placeholder="如：小满" /></label>
+                  </div>
+                  
+                  <section class="setting-group" style="margin-top:12px;">
+                    <h4>宝宝头像 Logo</h4>
+                    <div class="baby-logo-selector">
+                      <label class="logo-option" data-logo="none">
+                        <input type="radio" name="babyLogo" value="none" checked />
+                        <span class="logo-none">无</span>
+                        <span>不显示</span>
+                      </label>
+                      <label class="logo-option" data-logo="neutral">
+                        <input type="radio" name="babyLogo" value="neutral" />
+                        <img src="assets/logo-neutral.svg" alt="中性" />
+                        <span>默认</span>
+                      </label>
+                      <label class="logo-option" data-logo="boy">
+                        <input type="radio" name="babyLogo" value="boy" />
+                        <img src="assets/logo-boy.svg" alt="男宝" />
+                        <span>男宝</span>
+                      </label>
+                      <label class="logo-option" data-logo="girl">
+                        <input type="radio" name="babyLogo" value="girl" />
+                        <img src="assets/logo-girl.svg" alt="女宝" />
+                        <span>女宝</span>
+                      </label>
+                    </div>
+                    <small class="hint">选择后会在成长水印前显示对应头像</small>
+                  </section>
+                  
+                  <section class="setting-group" style="margin-top:12px;">
+                    <h4>显示模式</h4>
+                    <label>
+                      <select id="babyDisplayMode">
+                        <option value="both">同时显示时间戳和成长印记</option>
+                        <option value="time-only">仅显示时间戳</option>
+                        <option value="baby-only">仅显示成长印记</option>
+                      </select>
+                    </label>
+                  </section>
+                  
+                  <section class="setting-group" style="margin-top:12px;">
+                    <h4>显示格式</h4>
+                    <label>
+                      <select id="babyDisplayFormat">
+                        <option value="inline" selected>一行显示</option>
+                        <option value="newline">换行显示</option>
+                      </select>
+                    </label>
+                    <small class="hint">选择换行显示时，成长印记显示在时间戳上方</small>
+                  </section>
+                  
+                  <section class="setting-group" style="margin-top:12px;">
+                    <h4>成长印记格式</h4>
+                    <label>格式模板
+                      <select id="babyFormatSelect">
+                        <option value="age-short">X岁X个月</option>
+                        <option value="age-months">X个月X天</option>
+                        <option value="age-days">X天</option>
+                        <option value="age-full">X岁X个月X天</option>
+                        <option value="nickname-age-short">昵称 X岁X个月</option>
+                        <option value="nickname-age-months">昵称 X个月X天</option>
+                        <option value="nickname-age-days">昵称 X天</option>
+                        <option value="nickname-age-full">昵称 X岁X个月X天</option>
+                      </select>
+                    </label>
+                  </section>
+                  
+                  <p id="agePreview" class="hint">请先输入出生日期</p>
+                </section>
+              </div>
+            </li>
             
-            <section class="setting-group" style="margin-top:12px;">
-              <h4>显示模式</h4>
-              <label>
-                <select id="babyDisplayMode">
-                  <option value="both">同时显示时间戳和成长印记</option>
-                  <option value="time-only">仅显示时间戳</option>
-                  <option value="baby-only">仅显示成长印记</option>
-                </select>
-              </label>
-            </section>
+            <li class="pro-item-new locked" data-feature="批量 200 张">
+              <div class="pro-item-header">
+                <span>上传上限提升至 200 张</span>
+                <b class="pro-logo">PRO</b>
+                <span class="expand-icon">▼</span>
+              </div>
+              <div class="pro-item-content hidden">
+                <p class="pro-desc">Free 版本最多支持 20 张照片，升级到 Pro 后可一次性处理多达 200 张照片，大幅提升批量处理效率。</p>
+              </div>
+            </li>
             
-            <section class="setting-group" style="margin-top:12px;">
-              <h4>成长印记格式</h4>
-              <label>格式模板
-                <select id="babyFormatSelect">
-                  <option value="age-short">X岁X个月</option>
-                  <option value="age-months">X个月X天</option>
-                  <option value="age-full">X岁X个月X天</option>
-                  <option value="nickname-age-short">昵称 X岁X个月</option>
-                  <option value="nickname-age-months">昵称 X个月X天</option>
-                  <option value="nickname-age-full">昵称 X岁X个月X天</option>
-                </select>
-              </label>
-            </section>
+            <li class="pro-item-new locked" data-feature="批量压缩导出" data-panel="compressPanel">
+              <div class="pro-item-header">
+                <span>批量压缩导出</span>
+                <b class="pro-logo">PRO</b>
+                <span class="expand-icon">▼</span>
+              </div>
+              <div class="pro-item-content hidden">
+                <p class="pro-desc">设置单张最大输出体积，批量压缩导出照片。在保持清晰度的同时减小文件体积，方便存储和分享。</p>
+                <section id="compressPanel" class="compress-panel-inner hidden">
+                  <div class="setting-group">
+                    <h4>最大输出文件大小</h4>
+                    <label>
+                      <select id="maxFileSize">
+                        <option value="0">不限制（原图质量）</option>
+                        <option value="500">500 KB</option>
+                        <option value="1024">1 MB</option>
+                        <option value="2048">2 MB</option>
+                        <option value="5120" selected>5 MB</option>
+                        <option value="10240">10 MB</option>
+                      </select>
+                    </label>
+                    <small class="hint">超过此大小的图片将自动压缩</small>
+                  </div>
+                </section>
+              </div>
+            </li>
             
-            <p id="agePreview" class="hint">开通 Pro 后可启用宝宝成长水印。</p>
-          </section>
+            <li class="pro-item-new locked" data-feature="时间批量修改" data-panel="batchPanel">
+              <div class="pro-item-header">
+                <span>时间批量修改</span>
+                <b class="pro-logo">PRO</b>
+                <span class="expand-icon">▼</span>
+              </div>
+              <div class="pro-item-content hidden">
+                <p class="pro-desc">批量调整所有照片的时间戳，支持按天数和小时数偏移，快速校正拍摄时间。</p>
+                <section id="batchPanel" class="batch-panel-inner hidden">
+                  <div class="grid-2">
+                    <label>批量加减天数 <input id="batchDays" type="number" value="0" /></label>
+                    <label>批量加减小时 <input id="batchHours" type="number" value="0" /></label>
+                  </div>
+                  <div class="thumb-toolbar" style="margin-top:10px;">
+                    <button id="applyBatchBtn" class="secondary">应用到全部照片</button>
+                    <button id="resetBatchBtn" class="ghost">批量恢复默认</button>
+                  </div>
+                </section>
+              </div>
+            </li>
+            
+            <li class="pro-item-new locked" data-feature="EXIF单张修改" data-panel="exifEditPanel">
+              <div class="pro-item-header">
+                <span>单张时间修改（EXIF）</span>
+                <b class="pro-logo">PRO</b>
+                <span class="expand-icon">▼</span>
+              </div>
+              <div class="pro-item-content hidden">
+                <p class="pro-desc">精确修改单张或多张照片的拍摄时间，支持应用到当前照片或所有照片。</p>
+                <section id="exifEditPanel" class="exif-edit-panel-inner hidden">
+                  <div class="grid-2">
+                    <label>日期 <input id="editDate" type="date" /></label>
+                    <label>时间 <input id="editTime" type="time" /></label>
+                  </div>
+                  <div class="thumb-toolbar" style="margin-top:10px;">
+                    <button id="applyToCurrentBtn" class="secondary">应用到当前照片</button>
+                    <button id="applyToAllBtn" class="primary">应用到所有照片</button>
+                  </div>
+                  <small class="hint">修改后将覆盖原 EXIF 时间，用于最终导出。</small>
+                </section>
+              </div>
+            </li>
+          </ul>
         </article>
       </aside>
     </main>
 
+    <!-- 底部导出栏 - 精简为三个选项 -->
     <footer class="bottom-bar card">
-      <button id="startBtn" class="start-btn">开始添加时间戳</button>
-      <div class="actions">
-        <button class="secondary">分批处理</button>
-        <button class="secondary">合并导出</button>
+      <div class="export-row">
+        <button id="exportCurrentBtn" class="secondary">导出当前</button>
+        <button id="exportAllBtn" class="secondary">导出所有</button>
+        <button id="packExportBtn" class="secondary">打包导出为.Zip</button>
       </div>
-      <div class="progress-wrap">
-        <div class="progress-meta" id="progressLabel">已处理 0/0 张</div>
-        <div class="progress"><div id="progressInner"></div></div>
+      <div class="developer-info">
+        <span>开发者：小小铭 Makerming</span>
+        <span class="version" id="versionDisplay">v1.9</span>
+        <a href="#" id="supportLinkBottom" class="support-link-bottom">💙 支持一下</a>
       </div>
     </footer>
 
-    <div id="hintBubble" class="hint-bubble">等待指引：请先上传照片。</div>
+    <!-- 提示气泡 -->
+    <div id="hintBubble" class="hint-bubble hidden">等待指引：请先上传照片。</div>
 
-    <div id="subscribeModal" class="modal hidden">
-      <div class="modal-panel">
-        <h3>升级 Pro 会员</h3>
-        <p>解锁高级功能：200 张上传、宝宝成长水印、更多导出选项。</p>
-        <div class="thumb-toolbar">
-          <button id="confirmSubscribeBtn" class="primary">立即开通（模拟）</button>
-          <button id="closeSubscribeBtn" class="ghost">稍后再说</button>
+    <!-- 订阅/付款码弹窗 -->
+    <div id="paymentModal" class="modal hidden">
+      <div class="modal-panel payment-modal-panel">
+        <h3>❤️ 支持时光印记</h3>
+        <p class="support-desc">解锁 Pro 功能，让记录更美好</p>
+        <p class="support-text">
+          感谢您的支持！Pro 版本包含以下功能：<br>
+          ✓ 上传上限提升至 200 张<br>
+          ✓ 宝宝成长水印<br>
+          ✓ 时间批量修改<br>
+          ✓ 无损压缩导出<br>
+          ✓ 批量导出所有照片
+        </p>
+        <div class="payment-qr-codes">
+          <div class="payment-qr">
+            <img src="assets/alipay.svg" alt="支付宝" id="alipayQr" onerror="this.style.display='none'"/>
+            <span>支付宝</span>
+          </div>
+          <div class="payment-qr">
+            <img src="assets/wechat.svg" alt="微信支付" id="wechatQr" onerror="this.style.display='none'"/>
+            <span>微信支付</span>
+          </div>
+        </div>
+        <div class="payment-actions">
+          <button id="confirmPaymentBtn" class="primary">我已支付</button>
+          <button id="cancelPaymentBtn" class="ghost">以后</button>
         </div>
       </div>
     </div>
