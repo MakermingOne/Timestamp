@@ -1,0 +1,231 @@
+<!-- 顶部栏 -->
+<view class="header">
+  <view class="brand-section">
+    <text class="brand">时光印记</text>
+    <text class="tagline">时间水印批量添加</text>
+  </view>
+  <view class="header-actions">
+    <view class="badge {{isPro ? 'badge-pro' : 'badge-free'}}">
+      {{isPro ? 'Pro' : 'Free'}}
+    </view>
+    <button class="btn-upgrade" bindtap="showPaymentModal" data-type="subscribe">
+      {{isPro ? '已升级' : '升级 Pro'}}
+    </button>
+  </view>
+</view>
+
+<!-- 主内容区 -->
+<scroll-view class="main-content" scroll-y enhanced show-scrollbar>
+  
+  <!-- 上传区域 -->
+  <view class="card upload-section">
+    <view class="section-title">
+      <text class="title-num">①</text>
+      <text>选择照片</text>
+      <text class="photo-count" wx:if="{{photos.length > 0}}">({{photos.length}}/{{maxUpload}})</text>
+    </view>
+    
+    <view class="upload-area" bindtap="choosePhotos">
+      <text class="upload-icon">📷</text>
+      <text class="upload-text">点击选择照片</text>
+      <text class="upload-hint">最多可选择 {{maxUpload}} 张照片</text>
+    </view>
+    
+    <!-- 照片列表 -->
+    <scroll-view class="photo-list" scroll-x wx:if="{{photos.length > 0}}" show-scrollbar>
+      <view 
+        class="photo-item {{currentIndex === index ? 'active' : ''}}" 
+        wx:for="{{photos}}" 
+        wx:key="index"
+        bindtap="selectPhoto"
+        data-index="{{index}}"
+      >
+        <image src="{{item.tempFilePath}}" mode="aspectFill" class="photo-thumb"/>
+        <view class="photo-badge {{item.exifOk ? '' : 'no-exif'}}">
+          {{item.exifOk ? (index + 1) : '!'}}
+        </view>
+        <view class="photo-remove" catchtap="removePhoto" data-index="{{index}}">×</view>
+      </view>
+    </scroll-view>
+    
+    <!-- 清空按钮 -->
+    <button class="btn-clear" bindtap="clearPhotos" wx:if="{{photos.length > 0}}">
+      清空全部
+    </button>
+  </view>
+
+  <!-- 预览区域 -->
+  <view class="card preview-section" wx:if="{{photos.length > 0}}">
+    <view class="section-title">
+      <text class="title-num">②</text>
+      <text>预览与调整</text>
+    </view>
+    
+    <!-- Canvas 预览 -->
+    <view class="preview-container">
+      <canvas 
+        type="2d" 
+        id="previewCanvas" 
+        class="preview-canvas"
+        bindtouchstart="onCanvasTouch"
+        bindtouchmove="onCanvasMove"
+      ></canvas>
+      
+      <!-- 水印位置提示 -->
+      <view class="watermark-hint" wx:if="{{showWatermarkHint}}">
+        拖动调整水印位置
+      </view>
+    </view>
+    
+    <!-- 照片信息 -->
+    <view class="photo-info" wx:if="{{currentPhoto}}">
+      <text class="photo-name">{{currentPhoto.name}}</text>
+      <text class="photo-meta">{{currentPhoto.width}}×{{currentPhoto.height}} · {{formatDate(currentPhoto.dateTime)}}</text>
+    </view>
+  </view>
+
+  <!-- 基础设置 -->
+  <view class="card settings-section" wx:if="{{photos.length > 0}}">
+    <view class="section-title">
+      <text class="title-num">③</text>
+      <text>水印设置</text>
+    </view>
+    
+    <!-- 时间格式 -->
+    <view class="setting-item">
+      <text class="setting-label">时间格式</text>
+      <picker mode="selector" range="{{formatOptions}}" range-key="label" value="{{formatIndex}}" bindchange="onFormatChange">
+        <view class="picker-value">{{formatOptions[formatIndex].label}}</view>
+      </picker>
+    </view>
+    
+    <!-- 水印位置 -->
+    <view class="setting-item">
+      <text class="setting-label">水印位置</text>
+      <view class="position-grid">
+        <view 
+          class="position-cell {{watermarkPosition === item.value ? 'active' : ''}}"
+          wx:for="{{positionOptions}}"
+          wx:key="value"
+          data-value="{{item.value}}"
+          bindtap="onPositionChange"
+        >
+          <view class="position-dot"></view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 边距设置 -->
+    <view class="setting-item">
+      <text class="setting-label">边缘距离 ({{margin}}mm)</text>
+      <slider min="0" max="10" step="0.5" value="{{margin}}" show-value bindchange="onMarginChange"/>
+    </view>
+  </view>
+
+  <!-- Pro 功能：宝宝成长水印 -->
+  <view class="card pro-section" wx:if="{{isPro && photos.length > 0}}">
+    <view class="section-title pro">
+      <text class="title-num">👶</text>
+      <text>宝宝成长水印</text>
+      <view class="badge badge-pro">Pro</view>
+    </view>
+    
+    <view class="setting-item">
+      <text class="setting-label">宝宝出生日期</text>
+      <picker mode="date" value="{{birthday}}" bindchange="onBirthdayChange">
+        <view class="picker-value">{{birthday || '请选择日期'}}</view>
+      </picker>
+    </view>
+    
+    <view class="setting-item">
+      <text class="setting-label">宝宝昵称（可选）</text>
+      <input type="text" placeholder="如：小满" value="{{nickname}}" bindinput="onNicknameInput"/>
+    </view>
+    
+    <!-- 年龄预览 -->
+    <view class="age-preview" wx:if="{{birthday && currentPhoto}}">
+      <text>成长印记：{{babyAgeText}}</text>
+    </view>
+  </view>
+
+  <!-- 导出设置 -->
+  <view class="card export-section" wx:if="{{photos.length > 0}}">
+    <view class="section-title">
+      <text class="title-num">④</text>
+      <text>导出设置</text>
+    </view>
+    
+    <!-- 压缩选项 -->
+    <view class="setting-item checkbox-item" bindtap="toggleCompress">
+      <checkbox checked="{{enableCompress}}"/>
+      <text class="setting-label">{{isPro ? '启用压缩导出' : '启用压缩导出 (Pro)'}}</text>
+    </view>
+    
+    <view class="setting-item" wx:if="{{enableCompress && isPro}}">
+      <text class="setting-label">最大文件大小</text>
+      <picker mode="selector" range="{{sizeOptions}}" value="{{sizeIndex}}" bindchange="onSizeChange">
+        <view class="picker-value">{{sizeOptions[sizeIndex]}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <!-- 导出按钮 -->
+  <view class="export-actions" wx:if="{{photos.length > 0}}">
+    <button class="btn btn-secondary" bindtap="exportCurrent">导出当前</button>
+    <button class="btn btn-primary" bindtap="exportAll">{{isPro ? '导出所有' : '导出所有 (Pro)'}}</button>
+  </view>
+
+  <!-- 底部留白 -->
+  <view style="height: 60rpx;"></view>
+</scroll-view>
+
+<!-- 支持按钮 -->
+<view class="support-btn" bindtap="showPaymentModal" data-type="support">
+  <text>💙 支持一下</text>
+</view>
+
+<!-- 支付/支持弹窗 -->
+<view class="modal {{showModal ? 'show' : ''}}" bindtap="hideModal">
+  <view class="modal-content" catchtap="preventBubble">
+    <view class="modal-header">
+      <text class="modal-title">{{modalType === 'subscribe' ? '❤️ 升级 Pro 会员' : '❤️ 支持时光印记'}}</text>
+      <view class="price-tag {{modalType === 'subscribe' ? 'price-pro' : 'price-free'}}">
+        {{modalType === 'subscribe' ? '￥9.9' : '随心支持'}}
+      </view>
+      <text class="modal-desc">{{modalType === 'subscribe' ? '解锁所有高级功能' : '感谢您的支持，让工具变得更好'}}</text>
+    </view>
+    
+    <!-- Pro 功能列表 -->
+    <view class="pro-features" wx:if="{{modalType === 'subscribe'}}">
+      <view class="feature-item" wx:for="{{proFeatures}}" wx:key="*this">
+        <text class="feature-check">✓</text>
+        <text>{{item}}</text>
+      </view>
+    </view>
+    
+    <!-- 收款码 -->
+    <view class="payment-methods">
+      <view class="payment-method">
+        <image src="/assets/alipay.png" mode="aspectFit" class="payment-qr"/>
+        <text>支付宝</text>
+      </view>
+      <view class="payment-method">
+        <image src="/assets/wechat.png" mode="aspectFit" class="payment-qr"/>
+        <text>微信支付</text>
+      </view>
+    </view>
+    
+    <view class="modal-actions">
+      <button class="btn btn-primary" bindtap="confirmPayment">{{modalType === 'subscribe' ? '我已支付' : '支持成功'}}</button>
+      <button class="btn btn-ghost" bindtap="hideModal">以后再说</button>
+    </view>
+  </view>
+</view>
+
+<!-- 导出 Canvas（隐藏） -->
+<canvas type="2d" id="exportCanvas" class="hidden"></canvas>
+
+<!-- Toast 提示 -->
+<view class="toast {{toast.show ? 'show' : ''}}">
+  <text>{{toast.message}}</text>
+</view>
