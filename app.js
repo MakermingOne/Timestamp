@@ -39,8 +39,18 @@ const singleTime = document.getElementById('singleTime');
 const applySingleBtn = document.getElementById('applySingleBtn');
 const resetSingleBtn = document.getElementById('resetSingleBtn');
 
-const startBtn = document.getElementById('startBtn');
 const hintBubble = document.getElementById('hintBubble');
+
+// 压缩导出设置
+const compressToggleLabel = document.getElementById('compressToggleLabel');
+const compressSettings = document.getElementById('compressSettings');
+const maxFileSize = document.getElementById('maxFileSize');
+
+// 导出按钮
+const exportCurrentBtn = document.getElementById('exportCurrentBtn');
+const exportAllBtn = document.getElementById('exportAllBtn');
+const exportZipBtn = document.getElementById('exportZipBtn');
+const supportBtn = document.getElementById('supportBtn');
 
 const proList = document.getElementById('proList');
 const babyPanel = document.getElementById('babyPanel');
@@ -50,6 +60,7 @@ const birthdayInput = document.getElementById('birthday');
 const nicknameInput = document.getElementById('nickname');
 const babyDisplayMode = document.getElementById('babyDisplayMode');
 const babyFormatSelect = document.getElementById('babyFormatSelect');
+const babyLogoInputs = document.querySelectorAll('input[name="babyLogo"]');
 
 // 位置选择器和边缘距离
 const positionVisual = document.getElementById('positionVisual');
@@ -68,7 +79,7 @@ const getInitialPos = () => {
 };
 
 let watermarkPos = getInitialPos(); // lt, ct, rt, lc, cc, rc, lb, cb, rb
-let watermarkMargin = { value: 2, unit: 'mm' }; // 默认 2mm
+let watermarkMargin = { value: 3, unit: 'mm' }; // 默认 3mm
 
 function maxUpload() {
   return isPro ? 200 : 20;
@@ -104,10 +115,14 @@ function refreshPlanUI() {
     babyPanel.classList.add('hidden');
     batchPanel.classList.add('hidden');
     agePreview.textContent = '开通 Pro 后可启用宝宝成长水印。';
+    // 关闭压缩设置
+    compressToggle.checked = false;
+    compressSettings?.classList.add('hidden');
     if (photos.length > 20) {
       setHint('当前照片超过 Free 上限 20 张，请升级 Pro 或清空后重传。');
     }
   }
+  updateCompressUI();
 }
 
 function pad(v) {
@@ -220,6 +235,20 @@ function toDateInputValue(date) {
 
 function toTimeInputValue(date) {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+// 获取选中的宝宝 Logo SVG
+function getBabyLogoSVG() {
+  const selected = document.querySelector('input[name="babyLogo"]:checked');
+  if (!selected || selected.value === 'none') return '';
+  
+  const type = selected.value;
+  const svgs = {
+    neutral: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="currentColor"/><ellipse cx="12" cy="18" rx="6" ry="5" fill="currentColor"/></svg>',
+    boy: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="currentColor"/><ellipse cx="12" cy="18" rx="6" ry="5" fill="currentColor"/><path d="M14 5 L16 3 M15.5 6.5 L18 4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
+    girl: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="currentColor"/><ellipse cx="12" cy="18" rx="6" ry="5" fill="currentColor"/><circle cx="9" cy="6" r="1.5" fill="white" opacity="0.6"/><circle cx="15" cy="6" r="1.5" fill="white" opacity="0.6"/></svg>'
+  };
+  return svgs[type] || '';
 }
 
 // 计算宝宝年龄文本
@@ -340,14 +369,23 @@ function updateCurrentWatermarkText() {
   }
   
   // 合并显示（用空格分隔）
+  let finalText = '';
   if (timeText && babyText) {
-    watermark.textContent = `${timeText} ${babyText}`;
+    finalText = `${timeText} ${babyText}`;
   } else if (timeText) {
-    watermark.textContent = timeText;
+    finalText = timeText;
   } else if (babyText) {
-    watermark.textContent = babyText;
+    finalText = babyText;
   } else {
-    watermark.textContent = formatByType(photo.currentDateTime, formatSelect?.value || 'dot-datetime');
+    finalText = formatByType(photo.currentDateTime, formatSelect?.value || 'dot-datetime');
+  }
+  
+  // 添加 Logo（如果启用了宝宝水印且有内容）
+  const logoSVG = getBabyLogoSVG();
+  if (logoSVG && (displayMode === 'baby-only' || displayMode === 'both') && babyText) {
+    watermark.innerHTML = `<span class="baby-logo">${logoSVG}</span>${finalText}`;
+  } else {
+    watermark.textContent = finalText;
   }
 }
 
@@ -404,9 +442,7 @@ function renderPreview() {
 }
 
 function renderProgress() {
-  const total = photos.length;
-  progressLabel.textContent = `已处理 ${Math.min(progress, total)}/${total} 张${compressToggle.checked ? ' · 压缩导出已开启' : ''}`;
-  progressInner.style.width = total ? `${(Math.min(progress, total) / total) * 100}%` : '0%';
+  // v1.9 移除进度条，此函数保留用于兼容性
 }
 
 function parseSingleDateTime() {
@@ -484,7 +520,7 @@ async function handleFileUpload() {
     renderPreview();
     renderProgress();
     updateCurrentWatermarkText();
-    setHint(`已上传 ${files.length} 张。请选择照片并点击"开始添加时间戳"。`);
+    setHint(`已上传 ${files.length} 张。请选择照片设置水印后导出。`);
   } catch (err) {
     setHint('上传失败：' + err.message);
   }
@@ -548,7 +584,26 @@ formatSelect?.addEventListener('change', () => {
   
   setHint(`时间格式已切换为: ${formatSelect.options[formatSelect.selectedIndex].text}`);
 });
-compressToggle.addEventListener('change', renderProgress);
+// 压缩导出开关
+compressToggle?.addEventListener('change', () => {
+  if (!isPro) {
+    compressToggle.checked = false;
+    openSubscribe('压缩导出是 Pro 功能');
+    return;
+  }
+  compressSettings?.classList.toggle('hidden', !compressToggle.checked);
+});
+
+// Pro 解锁后启用压缩设置
+function updateCompressUI() {
+  if (compressToggle) {
+    compressToggle.disabled = !isPro;
+    if (!isPro) {
+      compressToggle.checked = false;
+      compressSettings?.classList.add('hidden');
+    }
+  }
+}
 
 // 自定义格式输入监听
 if (customFormatInput) {
@@ -593,11 +648,7 @@ resetBatchBtn.addEventListener('click', () => {
   setHint('已批量恢复默认时间。');
 });
 
-setInterval(() => {
-  if (!photos.length || progress >= photos.length) return;
-  progress += 1;
-  renderProgress();
-}, 650);
+// v1.9 移除模拟进度条
 
 let dragging = false;
 let offsetX = 0;
@@ -655,27 +706,275 @@ marginUnit?.addEventListener('change', () => {
 });
 
 // 确保边缘距离默认值正确
-watermarkMargin.value = parseFloat(marginValue?.value || 2);
+watermarkMargin.value = parseFloat(marginValue?.value || 3);
 watermarkMargin.unit = marginUnit?.value || 'mm';
 
-startBtn.addEventListener('click', () => {
-  if (!photos.length) {
-    setHint('请先上传至少 1 张照片。');
+// 导出功能
+exportCurrentBtn?.addEventListener('click', async () => {
+  if (currentIndex < 0 || !photos[currentIndex]) {
+    setHint('请先选择一张照片');
     return;
   }
-  progress = 0;
-  renderProgress();
-  setHint(`开始执行添加时间戳，共 ${photos.length} 张。`);
+  setHint('正在导出当前照片...');
+  await exportPhoto(photos[currentIndex], currentIndex);
+  setHint('当前照片导出完成');
 });
+
+exportAllBtn?.addEventListener('click', async () => {
+  if (!photos.length) {
+    setHint('请先上传照片');
+    return;
+  }
+  if (!isPro && photos.length > 20) {
+    setHint('Free 用户最多导出 20 张，请升级 Pro');
+    openSubscribe('批量导出超过 Free 限制');
+    return;
+  }
+  setHint(`正在导出 ${photos.length} 张照片...`);
+  for (let i = 0; i < photos.length; i++) {
+    await exportPhoto(photos[i], i);
+  }
+  setHint('所有照片导出完成');
+});
+
+exportZipBtn?.addEventListener('click', async () => {
+  if (!photos.length) {
+    setHint('请先上传照片');
+    return;
+  }
+  if (!isPro && photos.length > 20) {
+    setHint('Free 用户最多打包 20 张，请升级 Pro');
+    openSubscribe('ZIP 导出超过 Free 限制');
+    return;
+  }
+  setHint('正在打包导出...');
+  await exportZip();
+  setHint('打包导出完成');
+});
+
+// 导出单张照片
+async function exportPhoto(photo, index) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      
+      // 绘制原图
+      ctx.drawImage(img, 0, 0);
+      
+      // 添加水印
+      drawWatermark(ctx, photo, canvas.width, canvas.height);
+      
+      // 导出
+      const maxSize = compressToggle.checked ? parseInt(maxFileSize?.value || 0) : 0;
+      downloadCanvas(canvas, photo.name, maxSize, resolve);
+    };
+    img.src = photo.url;
+  });
+}
+
+// 绘制水印到 canvas
+function drawWatermark(ctx, photo, canvasWidth, canvasHeight) {
+  const displayMode = babyDisplayMode ? babyDisplayMode.value : 'time-only';
+  let timeText = '';
+  let babyText = '';
+  
+  // 时间戳
+  if (displayMode === 'time-only' || displayMode === 'both') {
+    timeText = formatByType(photo.currentDateTime, formatSelect?.value || 'dot-datetime');
+  }
+  
+  // 宝宝年龄
+  if ((displayMode === 'baby-only' || displayMode === 'both') && isPro) {
+    const birthday = birthdayInput?.value;
+    if (birthday) {
+      const birthDate = new Date(birthday);
+      const nickname = nicknameInput?.value || '';
+      const format = babyFormatSelect?.value || 'age-short';
+      babyText = formatBabyAge(birthDate, photo.currentDateTime, format, nickname);
+    }
+  }
+  
+  // 合并文本
+  let finalText = '';
+  if (timeText && babyText) {
+    finalText = `${timeText} ${babyText}`;
+  } else if (timeText) {
+    finalText = timeText;
+  } else if (babyText) {
+    finalText = babyText;
+  } else {
+    finalText = formatByType(photo.currentDateTime, formatSelect?.value || 'dot-datetime');
+  }
+  
+  // 获取 Logo
+  const logoType = document.querySelector('input[name="babyLogo"]:checked')?.value;
+  const hasLogo = logoType && logoType !== 'none' && (displayMode === 'baby-only' || displayMode === 'both') && babyText && isPro;
+  
+  // 设置字体样式（胶片风格）
+  const fontSize = Math.max(14, Math.min(canvasWidth, canvasHeight) * 0.025);
+  ctx.font = `600 ${fontSize}px "Courier New", "Courier", "Lucida Console", monospace`;
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  
+  // 计算位置
+  const margin = getMarginPixels();
+  const pos = watermarkPos;
+  const [h, v] = pos.split('');
+  
+  // 测量文本
+  const metrics = ctx.measureText(finalText);
+  const textWidth = metrics.width;
+  const textHeight = fontSize;
+  
+  // Logo 尺寸
+  const logoSize = hasLogo ? fontSize * 1.2 : 0;
+  const totalWidth = textWidth + (hasLogo ? logoSize + fontSize * 0.3 : 0);
+  
+  // 计算 x 位置
+  let x, logoX;
+  if (h === 'l') {
+    x = margin;
+    logoX = margin;
+  } else if (h === 'c') {
+    x = (canvasWidth - totalWidth) / 2 + (hasLogo ? logoSize + fontSize * 0.3 : 0);
+    logoX = (canvasWidth - totalWidth) / 2;
+  } else { // r
+    x = canvasWidth - margin - textWidth;
+    logoX = canvasWidth - margin - totalWidth;
+  }
+  
+  // 计算 y 位置
+  let y;
+  if (v === 't') {
+    y = margin + textHeight;
+  } else if (v === 'c') {
+    y = canvasHeight / 2 + textHeight / 2;
+  } else { // b
+    y = canvasHeight - margin;
+  }
+  
+  // 绘制阴影
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+  ctx.shadowBlur = 4;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 1;
+  
+  // 绘制 Logo（简单圆形代替 SVG）
+  if (hasLogo) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 3;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 1;
+    ctx.fillStyle = '#ffffff';
+    
+    const centerX = logoX + logoSize / 2;
+    const centerY = y - textHeight * 0.3;
+    const radius = logoSize / 2.5;
+    
+    ctx.beginPath();
+    if (logoType === 'boy') {
+      // 男宝：圆形 + 小圆点
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(centerX + radius * 0.5, centerY - radius * 0.5, radius * 0.3, 0, Math.PI * 2);
+    } else if (logoType === 'girl') {
+      // 女宝：圆形 + 蝴蝶结效果（两个小圆）
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.beginPath();
+      ctx.arc(centerX - radius * 0.3, centerY - radius * 0.3, radius * 0.25, 0, Math.PI * 2);
+      ctx.arc(centerX + radius * 0.3, centerY - radius * 0.3, radius * 0.25, 0, Math.PI * 2);
+    } else {
+      // 中性：简单圆形
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    }
+    ctx.fill();
+    ctx.restore();
+  }
+  
+  // 绘制文本
+  ctx.fillText(finalText, hasLogo ? x + logoSize + fontSize * 0.3 : x, y);
+  
+  // 重置阴影
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+}
+
+// 下载 canvas 为图片，支持压缩
+function downloadCanvas(canvas, originalName, maxSizeKB, callback) {
+  const ext = originalName.split('.').pop().toLowerCase();
+  const baseName = originalName.replace(/\.[^.]+$/, '');
+  const outputName = `${baseName}_timestamped.jpg`;
+  
+  // 如果没有压缩要求，直接导出
+  if (!maxSizeKB || maxSizeKB === 0) {
+    const link = document.createElement('a');
+    link.download = outputName;
+    link.href = canvas.toDataURL('image/jpeg', 0.95);
+    link.click();
+    if (callback) callback();
+    return;
+  }
+  
+  // 压缩逻辑
+  let quality = 0.95;
+  const maxBytes = maxSizeKB * 1024;
+  
+  function tryExport() {
+    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+    const byteString = atob(dataUrl.split(',')[1]);
+    
+    if (byteString.length > maxBytes && quality > 0.3) {
+      quality -= 0.1;
+      tryExport();
+    } else {
+      const link = document.createElement('a');
+      link.download = outputName;
+      link.href = dataUrl;
+      link.click();
+      if (callback) callback();
+    }
+  }
+  
+  tryExport();
+}
+
+// ZIP 导出（简单模拟，实际项目可用 JSZip 库）
+async function exportZip() {
+  // 提示用户使用批量导出后手动打包
+  setHint('ZIP 功能：请使用"导出所有"按钮，导出后手动压缩文件夹');
+  
+  // 先导出所有
+  for (let i = 0; i < photos.length; i++) {
+    await exportPhoto(photos[i], i);
+    await new Promise(r => setTimeout(r, 200)); // 间隔避免浏览器阻塞
+  }
+  
+  alert('照片已全部导出，请手动将它们压缩为 ZIP 文件。\n\n提示：全选导出的照片 → 右键 → 压缩');
+}
+
+// v1.9 移除开始按钮，直接通过导出按钮操作
 
 upgradeBtn.addEventListener('click', () => openSubscribe('点击了升级 Pro'));
 openSubscribeBtn.addEventListener('click', () => openSubscribe('查看 Pro 订阅'));
+supportBtn?.addEventListener('click', () => openSubscribe('支持开发者'));
 closeSubscribeBtn.addEventListener('click', closeSubscribe);
 confirmSubscribeBtn.addEventListener('click', () => {
   isPro = true;
   closeSubscribe();
   refreshPlanUI();
-  setHint('订阅成功（模拟）：已切换 Pro，可上传最多 200 张并解锁高级功能。');
+  updateCompressUI();
+  setHint('感谢支持！已解锁 Pro 功能，可上传最多 200 张。');
 });
 
 proList.addEventListener('click', (e) => {
@@ -747,16 +1046,21 @@ if (babyFormatSelect) {
   babyFormatSelect.addEventListener('change', updateCurrentWatermarkText);
 }
 
+// 宝宝 Logo 选择切换
+babyLogoInputs.forEach(input => {
+  input.addEventListener('change', updateCurrentWatermarkText);
+});
+
 // 初始化
 refreshPlanUI();
 renderMeta();
 renderPreview();
-renderProgress();
 updateFormatPreview();
+updateCompressUI();
 
 // 初始状态：无照片时显示默认格式的时间
 const now = new Date();
 watermark.textContent = formatByType(now, formatSelect?.value || 'dot-datetime');
 updateWatermarkPosition();
 
-setHint('等待指引：上传照片后，点击"开始添加时间戳"。');
+setHint('请先上传照片，设置水印后导出。');

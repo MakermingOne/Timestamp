@@ -29,11 +29,22 @@
             <div class="thumb-toolbar">
               <button id="clearBtn" class="ghost">清空</button>
             </div>
-            <label class="compress-toggle">
-              <input id="compressToggle" type="checkbox" /> 开启压缩导出（可选）
+            <label class="compress-toggle" id="compressToggleLabel">
+              <input id="compressToggle" type="checkbox" disabled /> 开启压缩导出（Pro）
             </label>
           </div>
-          <small class="hint">默认按原图尺寸与大小输出；开启后将按压缩配置输出。</small>
+          <div id="compressSettings" class="compress-settings hidden">
+            <label>最大单张体积
+              <select id="maxFileSize">
+                <option value="0">不限制（原图质量）</option>
+                <option value="500">500 KB</option>
+                <option value="1024">1 MB</option>
+                <option value="2048" selected>2 MB</option>
+                <option value="5120">5 MB</option>
+                <option value="10240">10 MB</option>
+              </select>
+            </label>
+          </div>
           <div id="thumbGrid" class="thumb-grid"></div>
         </article>
 
@@ -154,9 +165,9 @@
             <div class="margin-control">
               <label>边缘距离
                 <div class="margin-inputs">
-                  <input id="marginValue" type="number" value="2" min="0" step="0.1" />
+                  <input id="marginValue" type="number" value="3" min="0" step="0.1" />
                   <select id="marginUnit">
-                    <option value="mm">mm</option>
+                    <option value="mm" selected>mm</option>
                     <option value="px">px</option>
                   </select>
                 </div>
@@ -200,6 +211,32 @@
             </div>
             
             <section class="setting-group" style="margin-top:12px;">
+              <h4>宝宝头像 Logo</h4>
+              <div class="logo-selector">
+                <label class="logo-option">
+                  <input type="radio" name="babyLogo" value="none" checked />
+                  <span class="logo-preview">无</span>
+                  <small>不显示</small>
+                </label>
+                <label class="logo-option">
+                  <input type="radio" name="babyLogo" value="neutral" />
+                  <svg class="logo-preview-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="currentColor"/><ellipse cx="12" cy="18" rx="6" ry="5" fill="currentColor"/></svg>
+                  <small>默认</small>
+                </label>
+                <label class="logo-option">
+                  <input type="radio" name="babyLogo" value="boy" />
+                  <svg class="logo-preview-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="currentColor"/><ellipse cx="12" cy="18" rx="6" ry="5" fill="currentColor"/><path d="M14 5 L16 3 M15.5 6.5 L18 4" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+                  <small>男宝</small>
+                </label>
+                <label class="logo-option">
+                  <input type="radio" name="babyLogo" value="girl" />
+                  <svg class="logo-preview-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="currentColor"/><ellipse cx="12" cy="18" rx="6" ry="5" fill="currentColor"/><circle cx="9" cy="6" r="1.5" fill="white" opacity="0.6"/><circle cx="15" cy="6" r="1.5" fill="white" opacity="0.6"/></svg>
+                  <small>女宝</small>
+                </label>
+              </div>
+            </section>
+            
+            <section class="setting-group" style="margin-top:12px;">
               <h4>显示模式</h4>
               <label>
                 <select id="babyDisplayMode">
@@ -231,25 +268,37 @@
     </main>
 
     <footer class="bottom-bar card">
-      <button id="startBtn" class="start-btn">开始添加时间戳</button>
-      <div class="actions">
-        <button class="secondary">分批处理</button>
-        <button class="secondary">合并导出</button>
+      <div class="export-actions">
+        <button id="exportCurrentBtn" class="secondary">导出当前</button>
+        <button id="exportAllBtn" class="secondary">导出所有</button>
+        <button id="exportZipBtn" class="primary">打包导出为 .Zip</button>
       </div>
-      <div class="progress-wrap">
-        <div class="progress-meta" id="progressLabel">已处理 0/0 张</div>
-        <div class="progress"><div id="progressInner"></div></div>
+      <div class="footer-info">
+        <span class="developer">开发者：小小铭 Makerming</span>
+        <span class="version">v1.9</span>
+        <button id="supportBtn" class="support-btn" title="支持开发者">💙 支持一下</button>
       </div>
     </footer>
 
-    <div id="hintBubble" class="hint-bubble">等待指引：请先上传照片。</div>
+    <div id="hintBubble" class="hint-bubble">请先上传照片，设置水印后导出。</div>
 
     <div id="subscribeModal" class="modal hidden">
-      <div class="modal-panel">
-        <h3>升级 Pro 会员</h3>
-        <p>解锁高级功能：200 张上传、宝宝成长水印、更多导出选项。</p>
+      <div class="modal-panel payment-panel">
+        <h3>💙 支持一下 / 升级 Pro</h3>
+        <p>您的支持将帮助我们持续改进工具！</p>
+        <div class="payment-methods">
+          <div class="payment-option">
+            <h4>微信支付</h4>
+            <div class="qr-placeholder">微信二维码</div>
+          </div>
+          <div class="payment-option">
+            <h4>支付宝</h4>
+            <div class="qr-placeholder">支付宝二维码</div>
+          </div>
+        </div>
+        <p class="payment-note">支付完成后点击下方按钮即可解锁 Pro 功能</p>
         <div class="thumb-toolbar">
-          <button id="confirmSubscribeBtn" class="primary">立即开通（模拟）</button>
+          <button id="confirmSubscribeBtn" class="primary">我已支付，解锁 Pro</button>
           <button id="closeSubscribeBtn" class="ghost">稍后再说</button>
         </div>
       </div>
