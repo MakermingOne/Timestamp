@@ -71,14 +71,6 @@ npx serve -s -l 4173
 
 **提示**：Free 用户导出超过 20 张时，可逐个导出当前照片，或升级 Pro。
 
-## 💰 支持我们
-
-将您的收款码放入 `assets` 文件夹：
-- `assets/alipay.svg` 或 `assets/alipay.png` - 支付宝收款码
-- `assets/wechat.svg` 或 `assets/wechat.png` - 微信收款码
-
-点击"升级 Pro"或"支持一下"即可解锁全部功能。
-
 ## 🎨 界面特点
 
 - 科技感浅色网格背景
