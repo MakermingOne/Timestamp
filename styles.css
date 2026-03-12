@@ -627,8 +627,50 @@ input:focus, select:focus {
   margin-bottom: 8px;
 }
 
-.support-desc { font-size: 16px; color: var(--text) !important; font-weight: 500; margin-bottom: 8px !important; }
-.support-text { font-size: 13px; line-height: 1.8; color: var(--muted); text-align: left; margin-bottom: 16px !important; }
+.support-desc { font-size: 16px; color: var(--text) !important; font-weight: 500; margin-bottom: 4px !important; }
+
+/* 价格标签 */
+.price-tag {
+  display: inline-block;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 8px 0 12px;
+  padding: 4px 16px;
+  border-radius: 20px;
+}
+.price-pro {
+  color: #ef4444;
+  background: linear-gradient(135deg, #fef3c7 0%, #fee2e2 100%);
+}
+.price-free {
+  color: #059669;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  font-size: 18px;
+}
+
+/* Pro 功能列表 */
+.pro-features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 16px;
+  text-align: left;
+  margin: 12px 16px 16px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.feature-icon {
+  color: #10b981;
+  font-weight: 700;
+}
 
 .payment-qr-codes {
   display: flex;
@@ -702,6 +744,38 @@ input:focus, select:focus {
   .support-link-small {
     display: none;
   }
+  
+  /* 移动端顶部栏优化 */
+  .topbar {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .brand-section {
+    flex: 1;
+    min-width: 0;
+  }
+  .brand {
+    font-size: 16px;
+  }
+  .brand-tagline {
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .top-actions {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .plan-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+  .top-actions .ghost {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
 }
 
 @media (max-width: 700px) {
@@ -725,6 +799,43 @@ input:focus, select:focus {
     font-size: 12px;
     padding: 6px 10px;
   }
+  
+  /* 移动端支付弹窗优化 */
+  .payment-modal-panel {
+    max-width: 90vw;
+    padding: 20px 16px;
+  }
+  .payment-modal-panel h3 {
+    font-size: 18px;
+  }
+  .price-tag {
+    font-size: 24px;
+    padding: 4px 12px;
+  }
+  .price-free {
+    font-size: 16px;
+  }
+  .pro-features {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin: 10px 8px 12px;
+    padding: 10px;
+  }
+  .feature-item {
+    font-size: 12px;
+  }
+  .payment-qr-codes {
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .payment-qr img {
+    width: 100px;
+    height: 130px;
+  }
+  .payment-actions button {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -733,6 +844,49 @@ input:focus, select:focus {
   }
   .export-row button::after {
     content: attr(data-short);
+  }
+  
+  /* 小屏幕手机支付弹窗优化 */
+  .payment-modal-panel {
+    padding: 16px 12px;
+  }
+  .payment-modal-panel h3 {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+  .support-desc {
+    font-size: 14px !important;
+  }
+  .price-tag {
+    font-size: 22px;
+    margin: 6px 0 8px;
+    padding: 3px 10px;
+  }
+  .pro-features {
+    padding: 8px;
+    margin: 8px 4px 10px;
+  }
+  .feature-item {
+    font-size: 11px;
+  }
+  .payment-qr-codes {
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .payment-qr img {
+    width: 90px;
+    height: 115px;
+  }
+  .payment-qr span {
+    font-size: 11px;
+  }
+  .payment-actions {
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .payment-actions button {
+    padding: 8px 16px;
+    font-size: 12px;
   }
 }
 

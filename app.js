@@ -92,18 +92,34 @@ function openPaymentModal(isSubscribe = false) {
   const modal = $('paymentModal');
   const title = modal?.querySelector('h3');
   const desc = modal?.querySelector('.support-desc');
+  const priceTag = modal?.querySelector('.price-tag') || createPriceTag(modal);
   
   if (title) {
     title.textContent = isSubscribe ? '❤️ 升级 Pro 会员' : '❤️ 支持时光印记';
   }
   if (desc) {
-    desc.textContent = isSubscribe ? '扫码支付，解锁所有高级功能' : '感谢您的支持，让工具变得更好';
+    desc.textContent = isSubscribe ? '解锁所有高级功能' : '随心支持，让工具变得更好';
+  }
+  if (priceTag) {
+    priceTag.textContent = isSubscribe ? '￥9.9' : '随心支持';
+    priceTag.className = isSubscribe ? 'price-tag price-pro' : 'price-tag price-free';
   }
   
   if (modal) {
     modal.dataset.isSubscribe = isSubscribe ? 'true' : 'false';
     modal.classList.remove('hidden');
   }
+}
+
+// 创建价格标签元素
+function createPriceTag(modal) {
+  if (!modal) return null;
+  const desc = modal.querySelector('.support-desc');
+  if (!desc) return null;
+  const priceTag = document.createElement('div');
+  priceTag.className = 'price-tag';
+  desc.parentNode.insertBefore(priceTag, desc.nextSibling);
+  return priceTag;
 }
 
 function closePaymentModal() {
