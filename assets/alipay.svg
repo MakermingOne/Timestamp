@@ -1,0 +1,8 @@
+<svg width="300" height="400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="300" height="400" fill="#1677FF"/>
+  <rect x="10" y="10" width="280" height="380" fill="white" stroke="#1677FF" stroke-width="4" rx="8"/>
+  <text x="150" y="50" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" fill="#1677FF">支付宝</text>
+  <rect x="50" y="80" width="200" height="200" fill="#f0f0f0" stroke="#1677FF" stroke-width="2" rx="4"/>
+  <text x="150" y="340" font-family="Arial" font-size="14" text-anchor="middle" fill="#666">请替换为真实付款码</text>
+  <text x="150" y="360" font-family="Arial" font-size="12" text-anchor="middle" fill="#999">assets/alipay.png</text>
+</svg>
