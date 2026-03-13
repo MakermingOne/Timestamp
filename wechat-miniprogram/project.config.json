@@ -31,7 +31,7 @@
       "outputPath": ""
     },
     "enableEngineNative": false,
-    "useIsolateContext": true,
+    "useIsolateContext": false,
     "userConfirmedBundleSwitch": false,
     "packNpmManually": false,
     "packNpmRelationList": [],
@@ -43,9 +43,9 @@
     "ignoreUploadUnusedFiles": true
   },
   "compileType": "miniprogram",
-  "libVersion": "2.30.0",
+  "libVersion": "2.32.0",
   "appid": "touristappid",
-  "projectname": "%E6%97%B6%E5%85%89%E5%8D%B0%E8%AE%B0",
+  "projectname": "timestamp-wechat",
   "condition": {},
   "editorSetting": {
     "tabIndent": "insertSpaces",
