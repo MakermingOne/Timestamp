@@ -5,7 +5,7 @@
   align-items: center;
   padding: 20rpx 30rpx;
   background: #fff;
-  border-bottom: 2rpx solid var(--border);
+  border-bottom: 2rpx solid #e5e7eb;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -19,12 +19,12 @@
 .brand {
   font-size: 36rpx;
   font-weight: 700;
-  color: var(--primary);
+  color: #2563eb;
 }
 
 .tagline {
   font-size: 22rpx;
-  color: var(--text-secondary);
+  color: #6b7280;
   margin-top: 4rpx;
 }
 
@@ -37,7 +37,7 @@
 .btn-upgrade {
   font-size: 24rpx;
   padding: 12rpx 24rpx;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
   color: #fff;
   border-radius: 100rpx;
   border: none;
@@ -56,11 +56,11 @@
   font-size: 32rpx;
   font-weight: 600;
   margin-bottom: 24rpx;
-  color: var(--text);
+  color: #1f2937;
 }
 
 .section-title.pro {
-  color: var(--warning);
+  color: #f59e0b;
 }
 
 .title-num {
@@ -69,7 +69,7 @@
   justify-content: center;
   width: 44rpx;
   height: 44rpx;
-  background: var(--primary);
+  background: #2563eb;
   color: #fff;
   border-radius: 50%;
   font-size: 24rpx;
@@ -78,7 +78,7 @@
 
 .photo-count {
   font-size: 24rpx;
-  color: var(--text-secondary);
+  color: #6b7280;
   font-weight: normal;
   margin-left: auto;
 }
@@ -94,7 +94,7 @@
   align-items: center;
   justify-content: center;
   padding: 60rpx 40rpx;
-  border: 4rpx dashed var(--border);
+  border: 4rpx dashed #e5e7eb;
   border-radius: 20rpx;
   background: #fafafa;
 }
@@ -106,14 +106,14 @@
 
 .upload-text {
   font-size: 32rpx;
-  color: var(--text);
+  color: #1f2937;
   font-weight: 500;
   margin-bottom: 8rpx;
 }
 
 .upload-hint {
   font-size: 24rpx;
-  color: var(--text-secondary);
+  color: #6b7280;
 }
 
 /* 照片列表 */
@@ -134,7 +134,7 @@
 }
 
 .photo-item.active {
-  border-color: var(--primary);
+  border-color: #2563eb;
 }
 
 .photo-thumb {
@@ -148,7 +148,7 @@
   left: 8rpx;
   width: 36rpx;
   height: 36rpx;
-  background: var(--success);
+  background: #10b981;
   color: #fff;
   font-size: 20rpx;
   border-radius: 50%;
@@ -158,7 +158,7 @@
 }
 
 .photo-badge.no-exif {
-  background: var(--warning);
+  background: #f59e0b;
 }
 
 .photo-remove {
@@ -179,9 +179,9 @@
 .btn-clear {
   margin-top: 24rpx;
   font-size: 26rpx;
-  color: var(--text-secondary);
+  color: #6b7280;
   background: transparent;
-  border: 2rpx solid var(--border);
+  border: 2rpx solid #e5e7eb;
   padding: 16rpx;
   border-radius: 12rpx;
 }
@@ -226,7 +226,7 @@
 
 .photo-name {
   font-size: 28rpx;
-  color: var(--text);
+  color: #1f2937;
   font-weight: 500;
   display: block;
   margin-bottom: 8rpx;
@@ -234,7 +234,7 @@
 
 .photo-meta {
   font-size: 24rpx;
-  color: var(--text-secondary);
+  color: #6b7280;
 }
 
 /* 设置项 */
@@ -249,7 +249,7 @@
 .setting-label {
   display: block;
   font-size: 28rpx;
-  color: var(--text);
+  color: #1f2937;
   margin-bottom: 16rpx;
   font-weight: 500;
 }
@@ -269,7 +269,7 @@
   background: #f9fafb;
   border-radius: 12rpx;
   font-size: 28rpx;
-  color: var(--text);
+  color: #1f2937;
 }
 
 /* 位置选择器 */
@@ -293,19 +293,19 @@
 }
 
 .position-cell.active {
-  background: var(--primary-soft);
-  border-color: var(--primary);
+  background: #dbeafe;
+  border-color: #2563eb;
 }
 
 .position-dot {
   width: 16rpx;
   height: 16rpx;
-  background: var(--text-secondary);
+  background: #6b7280;
   border-radius: 50%;
 }
 
 .position-cell.active .position-dot {
-  background: var(--primary);
+  background: #2563eb;
 }
 
 /* 滑块 */
@@ -424,7 +424,7 @@ slider {
 
 .modal-desc {
   font-size: 26rpx;
-  color: var(--text-secondary);
+  color: #6b7280;
 }
 
 .pro-features {
@@ -439,11 +439,11 @@ slider {
   align-items: center;
   gap: 8rpx;
   font-size: 24rpx;
-  color: var(--text);
+  color: #1f2937;
 }
 
 .feature-check {
-  color: var(--success);
+  color: #10b981;
   font-weight: 700;
 }
 
@@ -464,14 +464,14 @@ slider {
 .payment-qr {
   width: 200rpx;
   height: 260rpx;
-  border: 2rpx solid var(--border);
+  border: 2rpx solid #e5e7eb;
   border-radius: 12rpx;
   background: #f9fafb;
 }
 
 .payment-method text {
   font-size: 24rpx;
-  color: var(--text-secondary);
+  color: #6b7280;
 }
 
 .modal-actions {
@@ -507,5 +507,5 @@ input {
   background: #f9fafb;
   border-radius: 12rpx;
   font-size: 28rpx;
-  border: 2rpx solid var(--border);
+  border: 2rpx solid #e5e7eb;
 }
